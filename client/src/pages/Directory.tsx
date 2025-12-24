@@ -1,13 +1,26 @@
 import { useState, useMemo } from "react";
-import { mockLawyers } from "../data/mockLawyers";
+import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, DollarSign, Languages, Search, Filter } from "lucide-react";
+import { MapPin, Star, DollarSign, Languages, Search, Filter, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
+
+interface Lawyer {
+  id: string;
+  name: string;
+  firm: string;
+  practiceAreas: string[];
+  states: string[];
+  languages: string[];
+  hourlyRate: number;
+  imageUrl: string;
+  rating: number;
+  description: string;
+}
 
 export function Directory() {
   const [location] = useLocation();
@@ -18,9 +31,21 @@ export function Directory() {
   const [selectedState, setSelectedState] = useState<string>("all");
   const [maxRate, setMaxRate] = useState<number>(1000);
 
+  // Fetch lawyers from API
+  const { data: lawyers = [], isLoading, error } = useQuery<Lawyer[]>({
+    queryKey: ["lawyers"],
+    queryFn: async () => {
+      const response = await fetch("/api/lawyers");
+      if (!response.ok) {
+        throw new Error("Failed to fetch lawyers");
+      }
+      return response.json();
+    }
+  });
+
   // Filter logic
   const filteredLawyers = useMemo(() => {
-    return mockLawyers.filter(lawyer => {
+    return lawyers.filter(lawyer => {
       const matchesSearch = lawyer.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             lawyer.firm.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             lawyer.practiceAreas.some(pa => pa.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -29,7 +54,7 @@ export function Directory() {
 
       return matchesSearch && matchesState && matchesRate;
     });
-  }, [searchTerm, selectedState, maxRate]);
+  }, [lawyers, searchTerm, selectedState, maxRate]);
 
   return (
     <div className="container mx-auto px-4 py-8 h-[calc(100vh-64px)] flex flex-col">
@@ -72,6 +97,7 @@ export function Directory() {
                     <SelectItem value="DE">Delaware</SelectItem>
                     <SelectItem value="TX">Texas</SelectItem>
                     <SelectItem value="FL">Florida</SelectItem>
+                    <SelectItem value="WA">Washington</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -94,11 +120,25 @@ export function Directory() {
         {/* Results List (Center/Right) */}
         <div className="flex-1 overflow-y-auto pr-2 space-y-4">
           <div className="flex justify-between items-center mb-4">
-             <h2 className="text-xl font-bold">{filteredLawyers.length} Attorneys Found</h2>
+             <h2 className="text-xl font-bold">
+               {isLoading ? "Loading..." : `${filteredLawyers.length} Attorneys Found`}
+             </h2>
              <div className="text-sm text-muted-foreground">Sorted by Relevance</div>
           </div>
 
-          {filteredLawyers.map(lawyer => (
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
+
+          {error && (
+            <div className="text-center py-12 text-destructive">
+              <p>Error loading lawyers. Please try again.</p>
+            </div>
+          )}
+
+          {!isLoading && filteredLawyers.map(lawyer => (
             <Card key={lawyer.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row gap-6">
@@ -149,7 +189,7 @@ export function Directory() {
             </Card>
           ))}
 
-          {filteredLawyers.length === 0 && (
+          {!isLoading && filteredLawyers.length === 0 && (
              <div className="text-center py-12 text-muted-foreground">
                 <Search className="h-12 w-12 mx-auto mb-4 opacity-20" />
                 <p>No lawyers match your criteria. Try adjusting your filters.</p>

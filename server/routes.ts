@@ -1,16 +1,94 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import { type Server } from "http";
 import { storage } from "./storage";
+import { insertLawyerSchema, insertIntakeSchema } from "@shared/schema";
+import { fromZodError } from "zod-validation-error";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  
+  // Lawyers API
+  app.get("/api/lawyers", async (req, res) => {
+    try {
+      const lawyers = await storage.getAllLawyers();
+      // Convert rating from integer to decimal for frontend
+      const formattedLawyers = lawyers.map(l => ({
+        ...l,
+        rating: l.rating / 10
+      }));
+      res.json(formattedLawyers);
+    } catch (error) {
+      console.error("Error fetching lawyers:", error);
+      res.status(500).json({ error: "Failed to fetch lawyers" });
+    }
+  });
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  app.get("/api/lawyers/:id", async (req, res) => {
+    try {
+      const lawyer = await storage.getLawyerById(req.params.id);
+      if (!lawyer) {
+        return res.status(404).json({ error: "Lawyer not found" });
+      }
+      res.json({ ...lawyer, rating: lawyer.rating / 10 });
+    } catch (error) {
+      console.error("Error fetching lawyer:", error);
+      res.status(500).json({ error: "Failed to fetch lawyer" });
+    }
+  });
+
+  app.post("/api/lawyers", async (req, res) => {
+    try {
+      const validated = insertLawyerSchema.parse(req.body);
+      const lawyer = await storage.createLawyer(validated);
+      res.status(201).json({ ...lawyer, rating: lawyer.rating / 10 });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: fromZodError(error).toString() });
+      }
+      console.error("Error creating lawyer:", error);
+      res.status(500).json({ error: "Failed to create lawyer" });
+    }
+  });
+
+  // Intakes API
+  app.get("/api/intakes", async (req, res) => {
+    try {
+      const intakes = await storage.getAllIntakes();
+      res.json(intakes);
+    } catch (error) {
+      console.error("Error fetching intakes:", error);
+      res.status(500).json({ error: "Failed to fetch intakes" });
+    }
+  });
+
+  app.get("/api/intakes/:id", async (req, res) => {
+    try {
+      const intake = await storage.getIntakeById(req.params.id);
+      if (!intake) {
+        return res.status(404).json({ error: "Intake not found" });
+      }
+      res.json(intake);
+    } catch (error) {
+      console.error("Error fetching intake:", error);
+      res.status(500).json({ error: "Failed to fetch intake" });
+    }
+  });
+
+  app.post("/api/intakes", async (req, res) => {
+    try {
+      const validated = insertIntakeSchema.parse(req.body);
+      const intake = await storage.createIntake(validated);
+      res.status(201).json(intake);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: fromZodError(error).toString() });
+      }
+      console.error("Error creating intake:", error);
+      res.status(500).json({ error: "Failed to create intake" });
+    }
+  });
 
   return httpServer;
 }

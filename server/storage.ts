@@ -1,38 +1,59 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
+import { eq, and, inArray, lte } from "drizzle-orm";
+import * as schema from "@shared/schema";
+import type { Lawyer, InsertLawyer, Intake, InsertIntake } from "@shared/schema";
 
-// modify the interface with any CRUD methods
-// you might need
+const { Pool } = pg;
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+export const db = drizzle(pool, { schema });
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Lawyers
+  getAllLawyers(): Promise<Lawyer[]>;
+  getLawyerById(id: string): Promise<Lawyer | undefined>;
+  createLawyer(lawyer: InsertLawyer): Promise<Lawyer>;
+  
+  // Intakes
+  getAllIntakes(): Promise<Intake[]>;
+  getIntakeById(id: string): Promise<Intake | undefined>;
+  createIntake(intake: InsertIntake): Promise<Intake>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  // Lawyers
+  async getAllLawyers(): Promise<Lawyer[]> {
+    return await db.select().from(schema.lawyers);
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getLawyerById(id: string): Promise<Lawyer | undefined> {
+    const result = await db.select().from(schema.lawyers).where(eq(schema.lawyers.id, id));
+    return result[0];
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async createLawyer(lawyer: InsertLawyer): Promise<Lawyer> {
+    const result = await db.insert(schema.lawyers).values(lawyer).returning();
+    return result[0];
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  // Intakes
+  async getAllIntakes(): Promise<Intake[]> {
+    return await db.select().from(schema.intakes);
+  }
+
+  async getIntakeById(id: string): Promise<Intake | undefined> {
+    const result = await db.select().from(schema.intakes).where(eq(schema.intakes.id, id));
+    return result[0];
+  }
+
+  async createIntake(intake: InsertIntake): Promise<Intake> {
+    const result = await db.insert(schema.intakes).values(intake).returning();
+    return result[0];
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

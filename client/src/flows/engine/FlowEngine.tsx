@@ -11,6 +11,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { CheckCircle2, Circle, ArrowRight, ArrowLeft, Upload } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useMutation } from "@tanstack/react-query";
 
 interface FlowEngineProps {
   workflow: WorkflowDefinition;
@@ -42,12 +43,35 @@ export function FlowEngine({ workflow }: FlowEngineProps) {
     localStorage.setItem(`workflow-${workflow.id}`, JSON.stringify(answers));
   }, [workflow.id, answers]);
 
+  // Mutation to submit intake
+  const submitIntakeMutation = useMutation({
+    mutationFn: async (intakeData: { workflowId: string; workflowTitle: string; data: any }) => {
+      const response = await fetch("/api/intakes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(intakeData)
+      });
+      if (!response.ok) {
+        throw new Error("Failed to submit intake");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      // Clear local storage after successful submission
+      localStorage.removeItem(`workflow-${workflow.id}`);
+      setLocation(`/directory?source=${workflow.id}`);
+    },
+    onError: (error) => {
+      console.error("Error submitting intake:", error);
+      alert("Failed to submit workflow. Please try again.");
+    }
+  });
+
   const currentStep = workflow.steps.find(s => s.id === currentStepId);
 
   // Helper to calculate progress
   const currentStepIndex = workflow.steps.findIndex(s => s.id === currentStepId);
   const totalSteps = workflow.steps.length;
-  // This is a naive progress calc because of branching, but sufficient for mockup
   const progress = ((currentStepIndex + 1) / totalSteps) * 100;
 
   if (!currentStep) return <div>Step not found</div>;
@@ -60,18 +84,14 @@ export function FlowEngine({ workflow }: FlowEngineProps) {
     }
 
     if (currentStep.nextStepId === "complete") {
-      // Submit
+      // Submit to backend
       const intakePayload = {
         workflowId: workflow.id,
         workflowTitle: workflow.title,
-        data: answers,
-        completedAt: new Date().toISOString()
+        data: answers
       };
       
-      // In a real app, we'd POST this. Here we pass it via state or just assume it's "saved"
-      // and redirect to directory with some filters pre-filled.
-      localStorage.setItem("latestIntake", JSON.stringify(intakePayload));
-      setLocation(`/directory?source=${workflow.id}`);
+      submitIntakeMutation.mutate(intakePayload);
     } else if (currentStep.nextStepId) {
       setHistory([...history, currentStepId]);
       setCurrentStepId(currentStep.nextStepId);
@@ -275,9 +295,11 @@ export function FlowEngine({ workflow }: FlowEngineProps) {
              
              <Button 
                onClick={handleNext}
+               disabled={submitIntakeMutation.isPending}
                className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg rounded-full shadow-lg shadow-primary/20"
              >
-               {currentStep.nextStepId === 'complete' ? 'Submit Workflow' : 'Continue'} 
+               {submitIntakeMutation.isPending ? "Submitting..." : 
+                currentStep.nextStepId === 'complete' ? 'Submit Workflow' : 'Continue'} 
                <ArrowRight className="ml-2 h-5 w-5" />
              </Button>
           </div>
