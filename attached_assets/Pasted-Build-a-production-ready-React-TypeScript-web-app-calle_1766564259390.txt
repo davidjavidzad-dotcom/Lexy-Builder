@@ -1,0 +1,56 @@
+Build a production-ready React + TypeScript web app called “GoodLegal (Lexy)” with Vite.
+
+Design:
+- Modern 2025 minimalist style like Clerky.com: mostly white, black text, subtle gray borders, lots of whitespace.
+- Accent color: Lexy green #22B400 for primary buttons, progress, highlights.
+- Font: Satoshi (use a web import in CSS).
+- No popups/modals for workflows. Workflows are full-screen, step-by-step forms (TurboTax style).
+- Responsive: looks clean on mobile and desktop.
+
+Architecture:
+- React + TypeScript + Vite
+- Simple routing (react-router-dom) with routes:
+  - /home
+  - /workflows
+  - /workflow/:workflowId
+  - /directory
+  - /admin (optional, local demo)
+- Component structure:
+  - src/components/Layout (TopNav, Footer)
+  - src/components/ui (Button, Input, Select, Card, Pill, ProgressBar)
+  - src/flows/engine (FlowEngine that can render steps from JSON)
+  - src/flows/library (flow definitions stored as JSON or TS objects)
+  - src/pages (Home, Workflows, WorkflowRunner, Directory)
+
+Core feature:
+- Workflows ARE the intake. Completing a workflow generates an “intake payload” and immediately routes to /directory with filters pre-applied.
+- Add two starter workflows in the library:
+  1) Entity Formation (skeleton steps: State → Entity Type → Founders → Ownership → Roles → Summary)
+  2) Personal Injury Intake (skeleton steps: Personal Info → Incident → Injuries/Treatment → Evidence Upload placeholders → Summary)
+
+Flow Engine requirements (important):
+- Define a JSON schema for workflows that supports:
+  - branching logic (if/else)
+  - step types: text input, textarea, select, multi-select, checkbox, radio, date, number, address, file upload placeholder
+  - computed defaults (e.g., default state CA)
+  - “go to step” branching
+- Implement FlowEngine to read workflow JSON and render:
+  - left progress sidebar: step names and completion
+  - main panel: current step form fields
+  - bottom nav: Back / Next
+  - validation: required fields block Next
+  - autosave answers to localStorage keyed by workflowId
+  - summary step that prints a clean intake summary card
+  - on submit: build an intake payload object and navigate to /directory with it in router state.
+
+Directory:
+- Use mock lawyer data stored locally (src/data/mockLawyers.ts).
+- Filter + rank lawyers based on intake payload (practice area, state, language, budget ceiling).
+- Show a clean list + map placeholder panel.
+- Buttons: View Profile (inline expandable section, not modal) and Request Consult (dummy form).
+
+Deliverables:
+- App runs immediately with npm install + npm run dev
+- Clean file structure
+- Clear TODO comments showing where I will paste my large workflow JSON later (single file import).
+- Provide a /workflows page that lists available flows and links to /workflow/:workflowId
