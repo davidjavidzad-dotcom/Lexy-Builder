@@ -1,3 +1,6 @@
+import { workflowDefinitions } from '../flows/definitions';
+
+const workflows = Object.values(workflowDefinitions);
 export type StepType = 
   | 'text' 
   | 'textarea' 

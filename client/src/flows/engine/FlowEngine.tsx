@@ -12,6 +12,7 @@ import { CheckCircle2, Circle, ArrowRight, ArrowLeft, Upload } from "lucide-reac
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
+import { workflowDefinitions } from '../definitions';
 
 interface FlowEngineProps {
   workflow: WorkflowDefinition;
