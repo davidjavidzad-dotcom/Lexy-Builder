@@ -1,0 +1,2361 @@
+{
+  "workflows": {
+    "business_formation": {
+      "id": "business_formation",
+      "title": "Opening a business?",
+      "description": "Form an entity for your business",
+      "icon": "briefcase",
+      "category": "business",
+      "steps": {
+        "initial_question": {
+          "type": "decision",
+          "question": "Do you plan to open a business that offers legal, medical, or accounting services?",
+          "options": [
+            {
+              "label": "Yes",
+              "value": "yes",
+              "next": "find_lawyer"
+            },
+            {
+              "label": "No",
+              "value": "no",
+              "next": "state_selection"
+            }
+          ]
+        },
+        "state_selection": {
+          "type": "decision",
+          "question": "Is there any reason your entity must be formed in California? (Not a common choice)",
+          "options": [
+            {
+              "label": "Yes",
+              "value": "yes",
+              "next": "entity_type_ca"
+            },
+            {
+              "label": "No",
+              "value": "no",
+              "next": "entity_type_de",
+              "default": true
+            }
+          ]
+        },
+        "entity_type_ca": {
+          "type": "selection",
+          "question": "What type of entity would you like to form?",
+          "state": "CA",
+          "options": [
+            {
+              "label": "C Corporation",
+              "value": "c_corp",
+              "next": "c_corp_form"
+            },
+            {
+              "label": "Limited Liability Company (LLC)",
+              "value": "llc",
+              "next": "llc_form"
+            },
+            {
+              "label": "Subsidiary",
+              "value": "subsidiary",
+              "next": "subsidiary_form"
+            }
+          ]
+        },
+        "entity_type_de": {
+          "type": "selection",
+          "question": "What type of entity would you like to form?",
+          "state": "DE",
+          "options": [
+            {
+              "label": "C Corporation",
+              "value": "c_corp",
+              "next": "c_corp_form"
+            },
+            {
+              "label": "Limited Liability Company (LLC)",
+              "value": "llc",
+              "next": "llc_form"
+            },
+            {
+              "label": "Subsidiary",
+              "value": "subsidiary",
+              "next": "subsidiary_form"
+            }
+          ]
+        },
+        "c_corp_form": {
+          "type": "form",
+          "title": "C Corporation Formation",
+          "sections": [
+            {
+              "title": "Company Name",
+              "fields": [
+                {
+                  "id": "company_name",
+                  "label": "Company Name",
+                  "type": "text",
+                  "required": true,
+                  "placeholder": "Enter company name"
+                },
+                {
+                  "id": "name_ending",
+                  "label": "Name Ending",
+                  "type": "select",
+                  "required": true,
+                  "options": [
+                    ", Inc.",
+                    " Incorporated",
+                    " Corp.",
+                    " Ltd."
+                  ]
+                }
+              ],
+              "info": "We'll check to make sure this name is available, but you can also check for yourself if you want to minimize the chance of delay."
+            },
+            {
+              "title": "Company Details",
+              "fields": [
+                {
+                  "id": "company_description",
+                  "label": "Company Description",
+                  "type": "textarea",
+                  "required": true
+                },
+                {
+                  "id": "website",
+                  "label": "Website",
+                  "type": "url",
+                  "required": false
+                }
+              ]
+            },
+            {
+              "title": "Founders",
+              "repeatable": true,
+              "fields": [
+                {
+                  "id": "founder_name",
+                  "label": "Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "founder_dob",
+                  "label": "Date of Birth",
+                  "type": "date",
+                  "required": true
+                },
+                {
+                  "id": "founder_address",
+                  "label": "Home Address",
+                  "type": "address",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "title": "Ownership",
+              "fields": [
+                {
+                  "id": "ownership_distribution",
+                  "label": "Tell us how much each founder will own",
+                  "type": "percentage_allocation",
+                  "source": "founders",
+                  "required": true
+                },
+                {
+                  "id": "reserve_equity",
+                  "label": "Reserve Equity for future team",
+                  "type": "checkbox"
+                },
+                {
+                  "id": "equity_pool_percentage",
+                  "label": "Equity Pool Percentage",
+                  "type": "percentage",
+                  "conditional": "reserve_equity",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "title": "Roles",
+              "fields": [
+                {
+                  "id": "board_directors",
+                  "label": "Board of Directors",
+                  "type": "multi_select",
+                  "source": "founders",
+                  "required": true
+                },
+                {
+                  "id": "president",
+                  "label": "President",
+                  "type": "select",
+                  "source": "founders",
+                  "required": true
+                },
+                {
+                  "id": "secretary",
+                  "label": "Secretary",
+                  "type": "select",
+                  "source": "founders",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "title": "83(b) Election",
+              "info": "The 83(b) election lets the IRS know that you'd like to be taxed on your equity on the date the equity was granted to you rather than on the date the equity vests.",
+              "fields": [
+                {
+                  "id": "83b_election",
+                  "label": "File 83(b) election",
+                  "type": "checkbox"
+                },
+                {
+                  "id": "ssn",
+                  "label": "Social Security Number",
+                  "type": "ssn",
+                  "conditional": "83b_election",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "title": "Tax ID",
+              "fields": [
+                {
+                  "id": "company_address",
+                  "label": "Company Address",
+                  "type": "address",
+                  "required": true
+                },
+                {
+                  "id": "phone_number",
+                  "label": "Phone Number",
+                  "type": "phone",
+                  "required": true
+                }
+              ],
+              "action": "submit_irs_ein"
+            },
+            {
+              "title": "Registered Agent",
+              "fields": [
+                {
+                  "id": "agent_name",
+                  "label": "Agent Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "agent_address",
+                  "label": "Agent Address",
+                  "type": "address",
+                  "required": true
+                }
+              ]
+            }
+          ],
+          "next": "summary_and_payment"
+        },
+        "llc_form": {
+          "type": "form",
+          "title": "Limited Liability Company Formation",
+          "sections": [
+            {
+              "title": "Company Name",
+              "fields": [
+                {
+                  "id": "company_name",
+                  "label": "Company Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "name_ending",
+                  "label": "Name Ending",
+                  "type": "select",
+                  "required": true,
+                  "options": [
+                    ", LLC",
+                    " L.L.C.",
+                    " Limited Liability Company"
+                  ]
+                }
+              ],
+              "info": "We'll check to make sure this name is available, but you can also check for yourself if you want to minimize the chance of delay."
+            },
+            {
+              "title": "Company Details",
+              "fields": [
+                {
+                  "id": "company_description",
+                  "label": "Company Description",
+                  "type": "textarea",
+                  "required": true
+                },
+                {
+                  "id": "website",
+                  "label": "Website",
+                  "type": "url",
+                  "required": false
+                }
+              ]
+            },
+            {
+              "title": "Members",
+              "repeatable": true,
+              "fields": [
+                {
+                  "id": "member_name",
+                  "label": "Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "member_dob",
+                  "label": "Date of Birth",
+                  "type": "date",
+                  "required": true
+                },
+                {
+                  "id": "member_address",
+                  "label": "Home Address",
+                  "type": "address",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "title": "Ownership",
+              "fields": [
+                {
+                  "id": "ownership_distribution",
+                  "label": "Tell us how much each member will own",
+                  "type": "percentage_allocation",
+                  "source": "members",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "title": "Management",
+              "fields": [
+                {
+                  "id": "managers",
+                  "label": "Managers",
+                  "type": "multi_select",
+                  "source": "members",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "title": "Tax ID",
+              "fields": [
+                {
+                  "id": "ssn",
+                  "label": "Social Security Number",
+                  "type": "ssn",
+                  "required": false
+                },
+                {
+                  "id": "company_address",
+                  "label": "Company Address",
+                  "type": "address",
+                  "required": true
+                },
+                {
+                  "id": "phone_number",
+                  "label": "Phone Number",
+                  "type": "phone",
+                  "required": true
+                }
+              ],
+              "action": "submit_irs_ein"
+            },
+            {
+              "title": "Registered Agent",
+              "fields": [
+                {
+                  "id": "agent_name",
+                  "label": "Agent Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "agent_address",
+                  "label": "Agent Address",
+                  "type": "address",
+                  "required": true
+                }
+              ]
+            }
+          ],
+          "next": "summary_and_payment"
+        },
+        "subsidiary_form": {
+          "type": "form",
+          "title": "Subsidiary Formation",
+          "sections": [
+            {
+              "title": "Parent Company",
+              "fields": [
+                {
+                  "id": "parent_name",
+                  "label": "Parent Company Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "parent_ein",
+                  "label": "Parent Company EIN",
+                  "type": "ein",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "title": "Subsidiary Name",
+              "fields": [
+                {
+                  "id": "company_name",
+                  "label": "Subsidiary Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "name_ending",
+                  "label": "Name Ending",
+                  "type": "select",
+                  "required": true,
+                  "options": [
+                    ", Inc.",
+                    " Incorporated",
+                    " Corp.",
+                    " Ltd."
+                  ]
+                }
+              ],
+              "info": "We'll check to make sure this name is available, but you can also check for yourself if you want to minimize the chance of delay."
+            }
+          ],
+          "next": "c_corp_form"
+        },
+        "summary_and_payment": {
+          "type": "summary",
+          "title": "Review Your Information",
+          "sections": [
+            {
+              "type": "review",
+              "source": "all_previous_data"
+            },
+            {
+              "type": "signature",
+              "text": "I certify that the information provided is accurate to the best of my knowledge. I understand that completing this form does not establish an attorney-client relationship."
+            },
+            {
+              "type": "optional_service",
+              "id": "organizational_docs",
+              "label": "I need to prepare organizational documents to govern my entity",
+              "next": "organizational_documents"
+            },
+            {
+              "type": "payment",
+              "method": "credit_card"
+            }
+          ],
+          "next": "confirmation"
+        },
+        "organizational_documents": {
+          "type": "document_selection",
+          "title": "Organizational Documents",
+          "database": [
+            "CA LLC Operating Agreement (Generic)",
+            "CA LLC Operating Agreement (RE SPE)",
+            "CA Inc. Bylaws (Generic)",
+            "DE LLC Operating Agreement",
+            "DE Inc. Bylaws"
+          ],
+          "auto_populate": true,
+          "next": "partner_check"
+        },
+        "partner_check": {
+          "type": "decision",
+          "question": "Do you have partners or investors?",
+          "options": [
+            {
+              "label": "Yes",
+              "value": "yes",
+              "next": "partner_type"
+            },
+            {
+              "label": "No",
+              "value": "no",
+              "next": "future_partners"
+            }
+          ]
+        },
+        "partner_type": {
+          "type": "selection",
+          "question": "What type of partner/investor?",
+          "options": [
+            {
+              "label": "Operating Partner",
+              "value": "operating",
+              "next": "partner_details"
+            },
+            {
+              "label": "Silent Investor",
+              "value": "silent",
+              "next": "investor_details"
+            }
+          ]
+        },
+        "partner_details": {
+          "type": "form",
+          "title": "Partner Information",
+          "repeatable": true,
+          "fields": [
+            {
+              "id": "partner_name",
+              "label": "Name of partner",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "partner_address",
+              "label": "Address",
+              "type": "address",
+              "required": true
+            },
+            {
+              "id": "partner_role",
+              "label": "Role",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "partner_email",
+              "label": "Email Address",
+              "type": "email",
+              "required": true
+            }
+          ],
+          "next": "document_generation"
+        },
+        "future_partners": {
+          "type": "decision",
+          "question": "Will you have partners or investors?",
+          "options": [
+            {
+              "label": "Yes",
+              "value": "yes",
+              "next": "document_generation"
+            },
+            {
+              "label": "No",
+              "value": "no",
+              "next": "document_generation"
+            }
+          ]
+        },
+        "document_generation": {
+          "type": "document_preview",
+          "title": "Document Review",
+          "features": [
+            "preview_draft",
+            "explain_provisions",
+            "docusign_integration"
+          ],
+          "next": "confirmation"
+        },
+        "find_lawyer": {
+          "type": "lawyer_finder",
+          "title": "Find a Lawyer",
+          "criteria": [
+            "jurisdiction",
+            "user_need",
+            "user_location",
+            "lawyer_type"
+          ],
+          "display": "map",
+          "results_count": "5-7",
+          "ranking_factors": [
+            "google_rating",
+            "yelp_rating",
+            "avvo_rating",
+            "amlaw100_ranking",
+            "accolades",
+            "firm_bio"
+          ]
+        },
+        "confirmation": {
+          "type": "confirmation",
+          "title": "Submission Complete",
+          "message": "Your formation documents have been submitted for processing."
+        }
+      }
+    },
+    "personal_injury": {
+      "id": "personal_injury",
+      "title": "Injured?",
+      "description": "Get help with personal injury claims",
+      "icon": "heart",
+      "category": "personal",
+      "subtypes": {
+        "car_accident": {
+          "id": "car_accident",
+          "title": "Car Accident",
+          "description": "Were you in a car accident?",
+          "steps": {
+            "personal_info": {
+              "type": "form",
+              "title": "Personal Information",
+              "fields": [
+                {
+                  "id": "full_name",
+                  "label": "Full Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "date_of_birth",
+                  "label": "Date of Birth",
+                  "type": "date",
+                  "required": true
+                },
+                {
+                  "id": "home_address",
+                  "label": "Home Address",
+                  "type": "address",
+                  "required": true
+                },
+                {
+                  "id": "phone_number",
+                  "label": "Phone Number",
+                  "type": "phone",
+                  "required": true
+                },
+                {
+                  "id": "email",
+                  "label": "Email",
+                  "type": "email",
+                  "required": true
+                },
+                {
+                  "id": "contact_preference",
+                  "label": "Preferred Contact Method",
+                  "type": "select",
+                  "options": ["Phone", "Email", "Text"],
+                  "required": true
+                }
+              ],
+              "next": "insurance_check"
+            },
+            "insurance_check": {
+              "type": "decision",
+              "question": "Do you have car insurance?",
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "next": "insurance_provider"
+                },
+                {
+                  "label": "No",
+                  "value": "no",
+                  "next": "incident_details"
+                }
+              ]
+            },
+            "insurance_provider": {
+              "type": "form",
+              "fields": [
+                {
+                  "id": "insurance_company",
+                  "label": "Insurance Provider Name",
+                  "type": "text",
+                  "required": true
+                }
+              ],
+              "next": "incident_details"
+            },
+            "incident_details": {
+              "type": "form",
+              "title": "Incident Details",
+              "fields": [
+                {
+                  "id": "incident_date",
+                  "label": "When did the incident occur?",
+                  "type": "datetime",
+                  "required": true
+                },
+                {
+                  "id": "incident_location",
+                  "label": "Where did the incident occur?",
+                  "type": "address_search",
+                  "required": true
+                },
+                {
+                  "id": "vehicle_color",
+                  "label": "What color best matches your vehicle?",
+                  "type": "color_swatch",
+                  "required": true
+                },
+                {
+                  "id": "driving_speed",
+                  "label": "Approximately what speed were you driving?",
+                  "type": "number",
+                  "unit": "mph",
+                  "required": true
+                }
+              ],
+              "next": "other_party_involved"
+            },
+            "other_party_involved": {
+              "type": "decision",
+              "question": "Was another car or person involved?",
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "next": "exchange_info"
+                },
+                {
+                  "label": "No",
+                  "value": "no",
+                  "next": "incident_description"
+                }
+              ]
+            },
+            "exchange_info": {
+              "type": "decision",
+              "question": "Did you exchange information with the other party?",
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "next": "other_party_insurance"
+                },
+                {
+                  "label": "No",
+                  "value": "no",
+                  "next": "other_party_damage"
+                }
+              ]
+            },
+            "other_party_insurance": {
+              "type": "decision",
+              "question": "Does the other party have car insurance?",
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "next": "other_insurance_provider"
+                },
+                {
+                  "label": "No",
+                  "value": "no",
+                  "next": "other_party_damage"
+                }
+              ]
+            },
+            "other_insurance_provider": {
+              "type": "form",
+              "fields": [
+                {
+                  "id": "other_insurance_company",
+                  "label": "Other Party's Insurance Provider",
+                  "type": "text",
+                  "required": true
+                }
+              ],
+              "next": "other_party_damage"
+            },
+            "other_party_damage": {
+              "type": "decision",
+              "question": "Is there damage to the other party's car?",
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "next": "incident_description"
+                },
+                {
+                  "label": "No",
+                  "value": "no",
+                  "next": "incident_description"
+                }
+              ]
+            },
+            "incident_description": {
+              "type": "form",
+              "title": "What Happened",
+              "fields": [
+                {
+                  "id": "incident_narrative",
+                  "label": "Tell us what happened with as much detail as you can",
+                  "type": "textarea",
+                  "required": true,
+                  "rows": 6
+                }
+              ],
+              "next": "injuries_medical"
+            },
+            "injuries_medical": {
+              "type": "form",
+              "title": "Injuries & Medical Treatment",
+              "fields": [
+                {
+                  "id": "injuries_sustained",
+                  "label": "What injuries did you sustain?",
+                  "type": "textarea",
+                  "required": true
+                },
+                {
+                  "id": "medical_attention",
+                  "label": "Did you seek medical attention?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "medical_location",
+                  "label": "If yes, where and when?",
+                  "type": "textarea",
+                  "conditional": "medical_attention==yes"
+                },
+                {
+                  "id": "ongoing_treatment",
+                  "label": "Have you received ongoing treatment?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "treatment_description",
+                  "label": "If yes, describe treatments received",
+                  "type": "textarea",
+                  "conditional": "ongoing_treatment==yes"
+                },
+                {
+                  "id": "medical_records",
+                  "label": "Do you have medical records related to the incident?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "medical_records_upload",
+                  "label": "Upload medical records",
+                  "type": "file_upload",
+                  "conditional": "medical_records==yes",
+                  "accept": "pdf,jpg,png"
+                },
+                {
+                  "id": "medical_insurance",
+                  "label": "Do you have medical insurance?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "medical_insurance_provider",
+                  "label": "Medical Insurance Provider",
+                  "type": "text",
+                  "conditional": "medical_insurance==yes"
+                },
+                {
+                  "id": "injury_photos",
+                  "label": "Do you have photos of your injuries?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "injury_photos_upload",
+                  "label": "Upload injury photos",
+                  "type": "file_upload",
+                  "conditional": "injury_photos==yes",
+                  "accept": "jpg,png",
+                  "multiple": true
+                }
+              ],
+              "next": "impact_daily_life"
+            },
+            "impact_daily_life": {
+              "type": "form",
+              "title": "Impact on Daily Life",
+              "fields": [
+                {
+                  "id": "missed_work",
+                  "label": "Have you missed work due to your injuries?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "days_missed",
+                  "label": "How many days?",
+                  "type": "number",
+                  "conditional": "missed_work==yes"
+                },
+                {
+                  "id": "daily_activities_impact",
+                  "label": "Has the injury impacted your ability to perform daily activities?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "daily_impact_description",
+                  "label": "Describe how",
+                  "type": "textarea",
+                  "conditional": "daily_activities_impact==yes"
+                },
+                {
+                  "id": "home_assistance",
+                  "label": "Have you needed assistance at home due to your injuries?",
+                  "type": "yes_no",
+                  "required": true
+                }
+              ],
+              "next": "property_damage"
+            },
+            "property_damage": {
+              "type": "form",
+              "title": "Property Damage & Expenses",
+              "fields": [
+                {
+                  "id": "property_damaged",
+                  "label": "Was your car or any other personal property damaged?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "damage_list",
+                  "label": "List items and estimated cost",
+                  "type": "textarea",
+                  "conditional": "property_damaged==yes"
+                },
+                {
+                  "id": "out_of_pocket",
+                  "label": "Have you incurred out-of-pocket expenses?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "expense_list",
+                  "label": "List expenses (medical bills, transportation, etc.)",
+                  "type": "textarea",
+                  "conditional": "out_of_pocket==yes"
+                }
+              ],
+              "next": "supporting_evidence"
+            },
+            "supporting_evidence": {
+              "type": "form",
+              "title": "Supporting Evidence",
+              "fields": [
+                {
+                  "id": "accident_photos",
+                  "label": "Do you have photos of the accident scene?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "accident_photos_upload",
+                  "label": "Upload accident photos",
+                  "type": "file_upload",
+                  "conditional": "accident_photos==yes",
+                  "accept": "jpg,png",
+                  "multiple": true
+                },
+                {
+                  "id": "police_report",
+                  "label": "Do you have a copy of the police report?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "police_report_upload",
+                  "label": "Upload police report",
+                  "type": "file_upload",
+                  "conditional": "police_report==yes",
+                  "accept": "pdf"
+                },
+                {
+                  "id": "witness_statements",
+                  "label": "Do you have witness statements?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "witness_upload",
+                  "label": "Upload witness statements",
+                  "type": "file_upload",
+                  "conditional": "witness_statements==yes",
+                  "accept": "pdf,doc,docx"
+                }
+              ],
+              "next": "liability_legal"
+            },
+            "liability_legal": {
+              "type": "form",
+              "title": "Liability & Legal Considerations",
+              "fields": [
+                {
+                  "id": "driver_negligent",
+                  "label": "Do you believe the other driver was negligent?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "negligence_explanation",
+                  "label": "Explain why",
+                  "type": "textarea",
+                  "conditional": "driver_negligent==yes"
+                },
+                {
+                  "id": "insurance_contact",
+                  "label": "Have you spoken to an insurance company about the incident?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "insurance_details",
+                  "label": "Provide details (adjuster name, claim number, etc.)",
+                  "type": "textarea",
+                  "conditional": "insurance_contact==yes"
+                },
+                {
+                  "id": "signed_documents",
+                  "label": "Have you signed any documents or settlement offers?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "previous_attorney",
+                  "label": "Have you previously hired an attorney for this matter?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "attorney_info",
+                  "label": "Attorney's name and firm",
+                  "type": "text",
+                  "conditional": "previous_attorney==yes"
+                }
+              ],
+              "next": "legal_goals"
+            },
+            "legal_goals": {
+              "type": "form",
+              "title": "Legal Goals & Next Steps",
+              "fields": [
+                {
+                  "id": "desired_outcome",
+                  "label": "What outcome are you hoping to achieve?",
+                  "type": "multi_select",
+                  "options": [
+                    "Medical expenses covered",
+                    "Lost wages compensated",
+                    "Pain & suffering damages",
+                    "Other"
+                  ],
+                  "required": true
+                },
+                {
+                  "id": "pursue_legal",
+                  "label": "Are you willing to pursue legal action if necessary?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "insurance_claim_help",
+                  "label": "Do you need assistance filing an insurance claim?",
+                  "type": "yes_no",
+                  "required": true
+                }
+              ],
+              "next": "injury_check"
+            },
+            "injury_check": {
+              "type": "decision",
+              "question": "Are you injured?",
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "next": "lawyer_connection"
+                },
+                {
+                  "label": "No",
+                  "value": "no",
+                  "next": "auto_redirect"
+                }
+              ]
+            },
+            "lawyer_connection": {
+              "type": "decision",
+              "question": "Do you want to be connected to a lawyer to represent you in this matter?",
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "next": "summary_submission"
+                },
+                {
+                  "label": "No",
+                  "value": "no",
+                  "next": "insurance_claim_option"
+                }
+              ]
+            },
+            "insurance_claim_option": {
+              "type": "decision",
+              "question": "The information provided should be submitted to an attorney who can advocate for your needs if you are injured. If you are choosing not to file a lawsuit at this time, would you like to file a claim with insurance?",
+              "options": [
+                {
+                  "label": "Yes",
+                  "value": "yes",
+                  "next": "insurance_claim_instructions"
+                },
+                {
+                  "label": "No",
+                  "value": "no",
+                  "next": "find_lawyer"
+                }
+              ]
+            },
+            "insurance_claim_instructions": {
+              "type": "instructions",
+              "title": "Insurance Claim Filing",
+              "content": "Based on your information, here's how to submit your claim with insurance...",
+              "action": "summarize_and_instruct"
+            },
+            "summary_submission": {
+              "type": "summary",
+              "title": "Review and Submit",
+              "sections": [
+                {
+                  "type": "review",
+                  "source": "all_previous_data"
+                },
+                {
+                  "type": "signature",
+                  "text": "I certify that the information provided is accurate to the best of my knowledge. I understand that completing this form does not establish an attorney-client relationship."
+                },
+                {
+                  "type": "submit",
+                  "action": "submit_to_lawyer",
+                  "next": "find_lawyer"
+                }
+              ]
+            },
+            "auto_redirect": {
+              "type": "auto_action",
+              "action": "redirect",
+              "message": "Redirecting to appropriate resources...",
+              "next": "find_lawyer"
+            },
+            "find_lawyer": {
+              "type": "lawyer_finder",
+              "title": "Find a Lawyer",
+              "specialization": "personal_injury"
+            }
+          }
+        },
+        "slip_and_fall": {
+          "id": "slip_and_fall",
+          "title": "Slip and Fall",
+          "description": "Were you injured at a public place or someone's property?",
+          "steps": {
+            "location_type": {
+              "type": "decision",
+              "question": "Where were you injured?",
+              "options": [
+                {
+                  "label": "At home",
+                  "value": "home",
+                  "next": "home_injury_resources"
+                },
+                {
+                  "label": "At a public place or someone's property",
+                  "value": "public_property",
+                  "next": "personal_info"
+                }
+              ]
+            },
+            "home_injury_resources": {
+              "type": "information",
+              "title": "Home Injury Resources",
+              "content": "Information about your rights and medical resources...",
+              "links": [
+                {
+                  "label": "Medical Resources",
+                  "url": "/resources/medical"
+                },
+                {
+                  "label": "Your Rights",
+                  "url": "/resources/rights"
+                }
+              ]
+            },
+            "personal_info": {
+              "type": "form",
+              "title": "Personal Information",
+              "fields": [
+                {
+                  "id": "full_name",
+                  "label": "Full Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "date_of_birth",
+                  "label": "Date of Birth",
+                  "type": "date",
+                  "required": true
+                },
+                {
+                  "id": "home_address",
+                  "label": "Home Address",
+                  "type": "address",
+                  "required": true
+                },
+                {
+                  "id": "phone_number",
+                  "label": "Phone Number",
+                  "type": "phone",
+                  "required": true
+                },
+                {
+                  "id": "email",
+                  "label": "Email",
+                  "type": "email",
+                  "required": true
+                },
+                {
+                  "id": "contact_preference",
+                  "label": "Preferred Contact Method",
+                  "type": "select",
+                  "options": ["Phone", "Email", "Text"],
+                  "required": true
+                }
+              ],
+              "next": "incident_details"
+            },
+            "incident_details": {
+              "type": "form",
+              "title": "Incident Details",
+              "fields": [
+                {
+                  "id": "incident_datetime",
+                  "label": "Date & Time of the Incident",
+                  "type": "datetime",
+                  "required": true
+                },
+                {
+                  "id": "location_type",
+                  "label": "Location of Incident",
+                  "type": "select",
+                  "options": ["Business", "Private Property", "Public Property"],
+                  "required": true
+                },
+                {
+                  "id": "business_name",
+                  "label": "Business name",
+                  "type": "text",
+                  "conditional": "location_type==Business"
+                },
+                {
+                  "id": "owner_name",
+                  "label": "Property owner's name (if known)",
+                  "type": "text",
+                  "conditional": "location_type==Private Property"
+                },
+                {
+                  "id": "public_location",
+                  "label": "Specify location (e.g., sidewalk, park, city property)",
+                  "type": "text",
+                  "conditional": "location_type==Public Property"
+                },
+                {
+                  "id": "weather_conditions",
+                  "label": "Weather Conditions at the Time",
+                  "type": "select",
+                  "options": ["Dry", "Wet", "Rainy", "Icy", "Snowy"],
+                  "required": true
+                }
+              ],
+              "next": "fall_cause"
+            },
+            "fall_cause": {
+              "type": "form",
+              "title": "What Caused Your Fall",
+              "fields": [
+                {
+                  "id": "fall_cause",
+                  "label": "What caused your fall?",
+                  "type": "select",
+                  "options": ["Wet floor", "Uneven pavement", "Debris", "Poor lighting", "Other"],
+                  "required": true
+                },
+                {
+                  "id": "other_cause",
+                  "label": "Please describe",
+                  "type": "textarea",
+                  "conditional": "fall_cause==Other"
+                },
+                {
+                  "id": "warning_signs",
+                  "label": "Did you see any warning signs?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "hazard_visibility",
+                  "label": "Was the hazardous condition obvious or hidden?",
+                  "type": "textarea",
+                  "required": true
+                }
+              ],
+              "next": "incident_reporting"
+            }
+          }
+        },
+        "medical_malpractice": {
+          "id": "medical_malpractice",
+          "title": "Medical Malpractice",
+          "description": "Did your medical treatment go wrong?",
+          "steps": {
+            "personal_info": {
+              "type": "form",
+              "title": "Personal Information",
+              "fields": [
+                {
+                  "id": "full_name",
+                  "label": "Full Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "date_of_birth",
+                  "label": "Date of Birth",
+                  "type": "date",
+                  "required": true
+                },
+                {
+                  "id": "home_address",
+                  "label": "Home Address",
+                  "type": "address",
+                  "required": true
+                },
+                {
+                  "id": "phone_number",
+                  "label": "Phone Number",
+                  "type": "phone",
+                  "required": true
+                },
+                {
+                  "id": "email",
+                  "label": "Email",
+                  "type": "email",
+                  "required": true
+                },
+                {
+                  "id": "contact_preference",
+                  "label": "Preferred Contact Method",
+                  "type": "select",
+                  "options": ["Phone", "Email", "Text"],
+                  "required": true
+                }
+              ],
+              "next": "incident_details"
+            },
+            "incident_details": {
+              "type": "form",
+              "title": "Incident Details",
+              "fields": [
+                {
+                  "id": "incident_date",
+                  "label": "Date of the Incident",
+                  "type": "date",
+                  "required": true
+                },
+                {
+                  "id": "provider_name",
+                  "label": "Name of Medical Provider or Facility Involved",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "facility_type",
+                  "label": "Type of Facility",
+                  "type": "select",
+                  "options": ["Hospital", "Clinic", "Private Practice", "Urgent Care", "Other"],
+                  "required": true
+                },
+                {
+                  "id": "incident_location",
+                  "label": "Location of Incident",
+                  "type": "text",
+                  "required": true
+                }
+              ],
+              "next": "treatment_details"
+            }
+          }
+        }
+      }
+    },
+    "employment": {
+      "id": "employment",
+      "title": "Just got hired, fired, or quitting?",
+      "description": "Employment law assistance",
+      "icon": "briefcase",
+      "category": "employment",
+      "subtypes": {
+        "hired": {
+          "id": "hired",
+          "title": "Just Got Hired",
+          "description": "I just got a new job!",
+          "steps": {
+            "initial_options": {
+              "type": "selection",
+              "question": "How can we help with your new job?",
+              "options": [
+                {
+                  "label": "I want to know my rights as an employee/employer",
+                  "value": "rights",
+                  "next": "state_selector"
+                },
+                {
+                  "label": "I want to understand my employment agreement",
+                  "value": "understand_agreement",
+                  "next": "upload_agreement"
+                },
+                {
+                  "label": "I need help negotiating my employment contract",
+                  "value": "negotiate",
+                  "next": "contract_negotiation"
+                }
+              ]
+            },
+            "state_selector": {
+              "type": "form",
+              "title": "Select Your State",
+              "fields": [
+                {
+                  "id": "state",
+                  "label": "State",
+                  "type": "state_selector",
+                  "required": true
+                }
+              ],
+              "next": "employment_rights_info"
+            },
+            "employment_rights_info": {
+              "type": "information",
+              "title": "Employment Rights in Your State",
+              "dynamic_content": "state_specific_rights",
+              "actions": [
+                {
+                  "label": "Find a Lawyer",
+                  "next": "find_lawyer"
+                }
+              ]
+            },
+            "upload_agreement": {
+              "type": "form",
+              "title": "Upload Your Employment Agreement",
+              "fields": [
+                {
+                  "id": "agreement_upload",
+                  "label": "Upload Agreement",
+                  "type": "file_upload",
+                  "accept": "pdf,doc,docx",
+                  "required": true
+                }
+              ],
+              "next": "ai_summary"
+            },
+            "ai_summary": {
+              "type": "ai_analysis",
+              "title": "Agreement Summary",
+              "features": [
+                "key_points_highlight",
+                "risk_analysis",
+                "compensation_summary",
+                "termination_clauses",
+                "non_compete_analysis"
+              ],
+              "actions": [
+                {
+                  "label": "Need a Lawyer?",
+                  "next": "find_lawyer"
+                }
+              ]
+            },
+            "contract_negotiation": {
+              "type": "form",
+              "title": "Contract Negotiation Information",
+              "fields": [
+                {
+                  "id": "employment_state",
+                  "label": "What state is your employment in?",
+                  "type": "state_selector",
+                  "required": true
+                },
+                {
+                  "id": "employment_city",
+                  "label": "What city is your employment in?",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "industry",
+                  "label": "What industry is your employment in?",
+                  "type": "select",
+                  "options": [
+                    "Technology",
+                    "Healthcare",
+                    "Finance",
+                    "Legal",
+                    "Education",
+                    "Manufacturing",
+                    "Retail",
+                    "Other"
+                  ],
+                  "required": true
+                },
+                {
+                  "id": "position_description",
+                  "label": "Describe the position",
+                  "type": "textarea",
+                  "required": true
+                },
+                {
+                  "id": "contract_value",
+                  "label": "Estimated value of the employment contract",
+                  "type": "currency",
+                  "required": true
+                }
+              ],
+              "next": "find_lawyer"
+            }
+          }
+        },
+        "fired": {
+          "id": "fired",
+          "title": "Just Got Fired or Laid Off",
+          "description": "I just got fired or laid off",
+          "steps": {
+            "personal_info": {
+              "type": "form",
+              "title": "Personal Information",
+              "fields": [
+                {
+                  "id": "full_name",
+                  "label": "Full Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "date_of_birth",
+                  "label": "Date of Birth",
+                  "type": "date",
+                  "required": true
+                },
+                {
+                  "id": "home_address",
+                  "label": "Home Address",
+                  "type": "address",
+                  "required": true
+                },
+                {
+                  "id": "phone_number",
+                  "label": "Phone Number",
+                  "type": "phone",
+                  "required": true
+                },
+                {
+                  "id": "email",
+                  "label": "Email",
+                  "type": "email",
+                  "required": true
+                },
+                {
+                  "id": "contact_preference",
+                  "label": "Preferred Contact Method",
+                  "type": "select",
+                  "options": ["Phone", "Email", "Text"],
+                  "required": true
+                }
+              ],
+              "next": "employment_details"
+            },
+            "employment_details": {
+              "type": "form",
+              "title": "Employment Details",
+              "fields": [
+                {
+                  "id": "employer_name",
+                  "label": "Employer's Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "employer_address",
+                  "label": "Employer's Address",
+                  "type": "address",
+                  "required": true
+                },
+                {
+                  "id": "job_title",
+                  "label": "Job Title",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "hire_date",
+                  "label": "Date of Hire",
+                  "type": "date",
+                  "required": true
+                }
+              ],
+              "next": "employment_status"
+            },
+            "employment_status": {
+              "type": "form",
+              "title": "Employment Status",
+              "fields": [
+                {
+                  "id": "still_employed",
+                  "label": "Are you still employed with this employer?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "last_employment_date",
+                  "label": "Last date of employment",
+                  "type": "date",
+                  "conditional": "still_employed==no"
+                },
+                {
+                  "id": "employment_type",
+                  "label": "Employment Status",
+                  "type": "select",
+                  "options": ["Full-Time", "Part-Time", "Independent Contractor", "Temporary"],
+                  "required": true
+                },
+                {
+                  "id": "pay_rate",
+                  "label": "Rate of Pay",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "payment_type",
+                  "label": "Payment Type",
+                  "type": "select",
+                  "options": ["Hourly", "Salary", "Commission", "Other"],
+                  "required": true
+                },
+                {
+                  "id": "employment_contract",
+                  "label": "Have you signed an employment contract?",
+                  "type": "select",
+                  "options": ["Yes", "No", "Unsure"],
+                  "required": true
+                },
+                {
+                  "id": "contract_copy",
+                  "label": "Do you have a copy?",
+                  "type": "yes_no",
+                  "conditional": "employment_contract==Yes"
+                },
+                {
+                  "id": "contract_upload",
+                  "label": "Upload contract",
+                  "type": "file_upload",
+                  "conditional": "contract_copy==yes",
+                  "accept": "pdf,doc,docx"
+                }
+              ],
+              "next": "dispute_nature"
+            },
+            "dispute_nature": {
+              "type": "form",
+              "title": "Nature of Employment Dispute",
+              "fields": [
+                {
+                  "id": "claim_types",
+                  "label": "What type of claim are you seeking legal assistance for?",
+                  "type": "multi_select",
+                  "options": [
+                    "Wrongful Termination",
+                    "Discrimination",
+                    "Retaliation",
+                    "Sexual Harassment",
+                    "Racial Harassment",
+                    "Other Harassment",
+                    "Unpaid Wages",
+                    "Unpaid Overtime",
+                    "Meal & Rest Break Violations",
+                    "Whistleblower Protection",
+                    "Workplace Safety Violation",
+                    "Breach of Contract",
+                    "Other"
+                  ],
+                  "required": true
+                },
+                {
+                  "id": "other_claim",
+                  "label": "Describe other claim",
+                  "type": "textarea",
+                  "conditional": "claim_types.includes('Other')"
+                }
+              ],
+              "next": "dispute_details"
+            },
+            "dispute_details": {
+              "type": "form",
+              "title": "Dispute Details",
+              "fields": [
+                {
+                  "id": "incident_description",
+                  "label": "Please provide a detailed description of the incident(s)",
+                  "type": "textarea",
+                  "rows": 6,
+                  "required": true
+                },
+                {
+                  "id": "first_occurrence",
+                  "label": "When did the issue first occur?",
+                  "type": "date",
+                  "required": true
+                },
+                {
+                  "id": "ongoing_issue",
+                  "label": "Is the issue ongoing?",
+                  "type": "yes_no",
+                  "required": true
+                },
+                {
+                  "id": "responsible_party",
+                  "label": "Who was responsible for the misconduct?",
+                  "type": "select",
+                  "options": ["Supervisor", "Coworker", "HR", "Other"],
+                  "required": true
+                },
+                {
+                  "id": "other_responsible",
+                  "label": "Please specify",
+                  "type": "text",
+                  "conditional": "responsible_party==Other"
+                }
+              ],
+              "next": "complaints_response"
+            }
+          }
+        },
+        "quitting": {
+          "id": "quitting",
+          "title": "Just Ended Employment",
+          "description": "I just ended my employment",
+          "reference": "fired"
+        }
+      }
+    },
+    "real_estate": {
+      "id": "real_estate",
+      "title": "Buying or leasing property?",
+      "description": "Real estate transactions and leases",
+      "icon": "home",
+      "category": "property",
+      "subtypes": {
+        "buying": {
+          "id": "buying",
+          "title": "Buying/Selling Property",
+          "description": "I want counsel to represent me in acquiring or selling a property",
+          "steps": {
+            "submitter_info": {
+              "type": "form",
+              "title": "Submitter Information",
+              "fields": [
+                {
+                  "id": "full_name",
+                  "label": "Full Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "id": "entity_name",
+                  "label": "Entity Name (if applicable)",
+                  "type": "text",
+                  "required": false
+                },
+                {
+                  "id": "phone_number",
+                  "label": "Phone Number",
+                  "type": "phone",
+                  "required": true
+                },
+                {
+                  "id": "email",
+                  "label": "Email",
+                  "type": "email",
+                  "required": true
+                },
+                {
+                  "id": "mailing_address",
+                  "label": "Mailing Address",
+                  "type": "address",
+                  "required": true
+                },
+                {
+                  "id": "contact_preference",
+                  "label": "Preferred Method of Contact",
+                  "type": "select",
+                  "options": ["Phone", "Email"],
+                  "required": true
+                }
+              ],
+              "next": "property_info"
+            },
+            "property_info": {
+              "type": "form",
+              "title": "Property Information",
+              "note": "Any of the following fields can be left blank",
+              "fields": [
+                {
+                  "id": "property_address",
+                  "label": "Address of Property",
+                  "type": "address",
+                  "required": false
+                },
+                {
+                  "id": "property_type",
+                  "label": "Type of Property",
+                  "type": "select",
+                  "options": ["Residential", "Commercial", "Mixed-Use", "Land", "Other"],
+                  "required": false
+                },
+                {
+                  "id": "property_size",
+                  "label": "Property Size (Square Footage / Acreage)",
+                  "type": "text",
+                  "required": false
+                },
+                {
+                  "id": "current_use",
+                  "label": "Current Use of Property",
+                  "type": "text",
+                  "required": false
+                },
+                {
+                  "id": "intended_use",
+                  "label": "Intended Use of Property",
+                  "type": "text",
+                  "required": false
+                },
+                {
+                  "id": "currently_leased",
+                  "label": "Is the property currently leased?",
+                  "type": "yes_no",
+                  "required": false
+                },
+                {
+                  "id": "tenant_details",
+                  "label": "Tenant details",
+                  "type": "textarea",
+                  "conditional": "currently_leased==yes"
+                }
+              ],
+              "next": "transaction_details"
+            },
+            "transaction_details": {
+              "type": "form",
+              "title": "Transaction Details",
+              "note": "Any of the following fields can be left blank",
+              "fields": [
+                {
+                  "id": "purchase_price",
+                  "label": "Purchase Price",
+                  "type": "currency",
+                  "required": false
+                },
+                {
+                  "id": "purchase_agreement",
+                  "label": "Is there an executed purchase agreement?",
+                  "type": "yes_no",
+                  "required": false
+                },
+                {
+                  "id": "agreement_upload",
+                  "label": "Provide copy or summary of key terms",
+                  "type": "file_or_text",
+                  "conditional": "purchase_agreement==yes"
+                },
+                {
+                  "id": "closing_date",
+                  "label": "Expected Closing Date",
+                  "type": "date",
+                  "required": false
+                },
+                {
+                  "id": "deposit_terms",
+                  "label": "Deposit Amount and Terms",
+                  "type": "text",
+                  "required": false
+                },
+                {
+                  "id": "financing_type",
+                  "label": "Financing or Cash Purchase?",
+                  "type": "select",
+                  "options": ["Financing", "Cash"],
+                  "required": false
+                },
+                {
+                  "id": "lender_name",
+                  "label": "Name of lender",
+                  "type": "text",
+                  "conditional": "financing_type==Financing"
+                },
+                {
+                  "id": "contingencies",
+                  "label": "Contingencies (e.g., financing, inspections, zoning, environmental)",
+                  "type": "textarea",
+                  "required": false
+                }
+              ],
+              "next": "due_diligence"
+            }
+          }
+        },
+        "leasing": {
+          "id": "leasing",
+          "title": "Leasing Property",
+          "description": "Draft or negotiate a lease",
+          "subtypes": {
+            "draft_lease": {
+              "id": "draft_lease",
+              "title": "Draft a Lease",
+              "description": "Use Goodlegal's lease drafting tool"
+            },
+            "negotiate_lease": {
+              "id": "negotiate_lease",
+              "title": "Negotiate/Review Lease",
+              "description": "Get counsel to represent you in lease matters"
+            }
+          }
+        }
+      }
+    },
+    "trademark": {
+      "id": "trademark",
+      "title": "Need to reserve or trademark my business name",
+      "description": "Business name reservation and trademark services",
+      "icon": "trademark",
+      "category": "business",
+      "steps": {
+        "jurisdiction": {
+          "type": "form",
+          "title": "Select Jurisdiction",
+          "fields": [
+            {
+              "id": "state",
+              "label": "State",
+              "type": "select",
+              "options": ["CA", "DE", "NY"],
+              "required": true
+            }
+          ],
+          "next": "name_search"
+        },
+        "name_search": {
+          "type": "integrated_search",
+          "title": "Business Name Search",
+          "features": [
+            "dba_search",
+            "entity_name_search",
+            "trademark_search",
+            "domain_availability"
+          ],
+          "display": "unified_results"
+        }
+      }
+    },
+    "family_law": {
+      "id": "family_law",
+      "title": "Family Law",
+      "description": "Marriage, divorce, and family matters",
+      "icon": "heart",
+      "category": "personal",
+      "subtypes": {
+        "marriage": {
+          "id": "marriage",
+          "title": "Getting Married?",
+          "description": "Prenuptial agreements and marriage services"
+        },
+        "divorce": {
+          "id": "divorce",
+          "title": "Getting Divorced?",
+          "description": "Divorce proceedings and settlements"
+        }
+      }
+    },
+    "lemon_law": {
+      "id": "lemon_law",
+      "title": "Car troubles and looking to lemon?",
+      "description": "Lemon law claims for defective vehicles",
+      "icon": "car",
+      "category": "consumer",
+      "steps": {
+        "submitter_info": {
+          "type": "form",
+          "title": "Submitter Information",
+          "fields": [
+            {
+              "id": "full_name",
+              "label": "Full Name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "date_of_birth",
+              "label": "Date of Birth",
+              "type": "date",
+              "required": true
+            },
+            {
+              "id": "home_address",
+              "label": "Home Address",
+              "type": "address",
+              "required": true
+            },
+            {
+              "id": "phone_number",
+              "label": "Phone Number",
+              "type": "phone",
+              "required": true
+            },
+            {
+              "id": "email",
+              "label": "Email",
+              "type": "email",
+              "required": true
+            },
+            {
+              "id": "contact_preference",
+              "label": "Preferred Contact Method",
+              "type": "select",
+              "options": ["Phone", "Email", "Text"],
+              "required": true
+            }
+          ],
+          "next": "vehicle_info"
+        },
+        "vehicle_info": {
+          "type": "form",
+          "title": "Vehicle Information",
+          "note": "All fields optional",
+          "fields": [
+            {
+              "id": "vehicle_info",
+              "label": "Year, Make, and Model",
+              "type": "text",
+              "required": false
+            },
+            {
+              "id": "vin",
+              "label": "Vehicle Identification Number (VIN)",
+              "type": "text",
+              "required": false
+            },
+            {
+              "id": "purchase_date",
+              "label": "Purchase/Lease Date",
+              "type": "date",
+              "required": false
+            },
+            {
+              "id": "purchase_price",
+              "label": "Purchase/Lease Price",
+              "type": "currency",
+              "required": false
+            },
+            {
+              "id": "new_used",
+              "label": "New or Used at Time of Purchase",
+              "type": "select",
+              "options": ["New", "Used"],
+              "required": false
+            },
+            {
+              "id": "odometer_purchase",
+              "label": "Odometer Reading at Purchase",
+              "type": "number",
+              "required": false
+            },
+            {
+              "id": "odometer_current",
+              "label": "Odometer Reading at Present",
+              "type": "number",
+              "required": false
+            },
+            {
+              "id": "warranty_info",
+              "label": "Warranty Type and Duration",
+              "type": "textarea",
+              "required": false
+            }
+          ],
+          "next": "financing_info"
+        }
+      }
+    },
+    "other_services": {
+      "id": "other_services",
+      "title": "Other Legal Services",
+      "description": "Additional legal services",
+      "icon": "scale",
+      "category": "other",
+      "subtypes": {
+        "criminal_defense": {
+          "id": "criminal_defense",
+          "title": "Looking for criminal defense?",
+          "description": "Criminal defense representation"
+        },
+        "business_investment": {
+          "id": "business_investment",
+          "title": "Investing in a business or being invested in?",
+          "description": "Business investment legal services"
+        },
+        "lending": {
+          "id": "lending",
+          "title": "Borrowing or lending money?",
+          "description": "Loan agreements and lending services"
+        },
+        "bankruptcy": {
+          "id": "bankruptcy",
+          "title": "Need bankruptcy protection?",
+          "description": "Bankruptcy filing and protection"
+        },
+        "immigration": {
+          "id": "immigration",
+          "title": "Need immigration help?",
+          "description": "Immigration legal services"
+        },
+        "estate_planning": {
+          "id": "estate_planning",
+          "title": "Need to write a will?",
+          "description": "Estate planning and will preparation"
+        }
+      }
+    }
+  },
+  "global_components": {
+    "lawyer_finder": {
+      "id": "lawyer_finder",
+      "type": "component",
+      "title": "Find a Lawyer",
+      "description": "Intelligent lawyer matching system",
+      "features": {
+        "criteria": [
+          "jurisdiction",
+          "specialization",
+          "user_location",
+          "case_type",
+          "budget"
+        ],
+        "display_options": [
+          "map_view",
+          "list_view",
+          "comparison_view"
+        ],
+        "ranking_factors": {
+          "ratings": [
+            "google_rating",
+            "yelp_rating",
+            "avvo_rating"
+          ],
+          "credentials": [
+            "amlaw100_ranking",
+            "super_lawyers",
+            "rising_stars",
+            "bar_associations"
+          ],
+          "firm_info": [
+            "firm_size",
+            "years_experience",
+            "case_success_rate",
+            "client_reviews"
+          ]
+        },
+        "results": {
+          "count": "5-7",
+          "sort_by": "relevance",
+          "filters": [
+            "distance",
+            "rating",
+            "price_range",
+            "availability"
+          ]
+        }
+      }
+    },
+    "field_types": {
+      "text": {
+        "validation": "string",
+        "maxLength": 255
+      },
+      "textarea": {
+        "validation": "string",
+        "maxLength": 5000
+      },
+      "email": {
+        "validation": "email",
+        "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+      },
+      "phone": {
+        "validation": "phone",
+        "pattern": "^\\+?[1-9]\\d{1,14}$"
+      },
+      "date": {
+        "validation": "date",
+        "format": "YYYY-MM-DD"
+      },
+      "datetime": {
+        "validation": "datetime",
+        "format": "YYYY-MM-DD HH:mm:ss"
+      },
+      "address": {
+        "validation": "object",
+        "fields": [
+          "street",
+          "city",
+          "state",
+          "zip",
+          "country"
+        ]
+      },
+      "currency": {
+        "validation": "number",
+        "format": "currency",
+        "min": 0
+      },
+      "percentage": {
+        "validation": "number",
+        "min": 0,
+        "max": 100
+      },
+      "yes_no": {
+        "validation": "boolean",
+        "options": ["Yes", "No"]
+      },
+      "file_upload": {
+        "validation": "file",
+        "maxSize": "10MB",
+        "accept": ["pdf", "doc", "docx", "jpg", "png"]
+      },
+      "multi_select": {
+        "validation": "array",
+        "minItems": 1
+      },
+      "percentage_allocation": {
+        "validation": "object",
+        "sumTo": 100
+      },
+      "ssn": {
+        "validation": "pattern",
+        "pattern": "^\\d{3}-\\d{2}-\\d{4}$",
+        "encrypted": true
+      },
+      "ein": {
+        "validation": "pattern",
+        "pattern": "^\\d{2}-\\d{7}$"
+      },
+      "state_selector": {
+        "validation": "enum",
+        "options": ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
+      }
+    },
+    "actions": {
+      "submit_irs_ein": {
+        "type": "api_integration",
+        "service": "irs",
+        "action": "submit_ein_application"
+      },
+      "submit_to_lawyer": {
+        "type": "submission",
+        "target": "lawyer_portal",
+        "notification": "email"
+      },
+      "generate_document": {
+        "type": "document_generation",
+        "templates": "database",
+        "format": "pdf"
+      },
+      "docusign_integration": {
+        "type": "external_service",
+        "provider": "docusign",
+        "action": "prepare_for_signature"
+      }
+    },
+    "navigation": {
+      "conditional_logic": {
+        "operators": ["==", "!=", ">", "<", ">=", "<=", "includes", "excludes"],
+        "combinators": ["AND", "OR", "NOT"]
+      },
+      "flow_control": {
+        "jump_to": "step_id",
+        "skip_if": "condition",
+        "loop": "repeatable_sections",
+        "branch": "conditional_paths"
+      }
+    },
+    "ui_components": {
+      "form_layouts": [
+        "single_column",
+        "two_column",
+        "wizard",
+        "tabbed"
+      ],
+      "input_enhancements": {
+        "autocomplete": true,
+        "real_time_validation": true,
+        "smart_defaults": true,
+        "progressive_disclosure": true
+      },
+      "accessibility": {
+        "aria_labels": true,
+        "keyboard_navigation": true,
+        "screen_reader_support": true,
+        "high_contrast_mode": true
+      }
+    },
+    "data_handling": {
+      "storage": {
+        "encryption": "AES-256",
+        "retention": "7_years",
+        "backup": "daily"
+      },
+      "privacy": {
+        "gdpr_compliant": true,
+        "ccpa_compliant": true,
+        "data_minimization": true
+      },
+      "export_formats": [
+        "pdf",
+        "docx",
+        "csv",
+        "json"
+      ]
+    }
+  },
+  "configuration": {
+    "version": "1.0.0",
+    "last_updated": "2024-12-24",
+    "author": "Goodlegal Team",
+    "license": "Proprietary"
+  }
+}
