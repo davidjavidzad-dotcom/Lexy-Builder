@@ -140,7 +140,7 @@ export class FileStorage implements IStorage {
       intakes: Array.from(this.intakes.values()).map(serializeIntake),
     };
     await mkdir(dirname(this.filePath), { recursive: true });
-    const tempPath = `${this.filePath}.${process.pid}.tmp`;
+    const tempPath = `${this.filePath}.${process.pid}.${randomUUID()}.tmp`;
     await writeFile(tempPath, JSON.stringify(payload, null, 2));
     await rename(tempPath, this.filePath);
   }
@@ -216,11 +216,15 @@ export class DatabaseStorage implements IStorage {
   private pool;
   private db;
   private ready: Promise<void>;
+  private initError: unknown;
 
   constructor(connectionString: string) {
     this.pool = new Pool({ connectionString });
     this.db = drizzle(this.pool, { schema });
-    this.ready = this.initialize();
+    this.ready = this.initialize().catch((error) => {
+      this.initError = error;
+      console.error("Database initialization failed. Falling back when possible.", error);
+    });
   }
 
   private async initialize(): Promise<void> {
@@ -284,42 +288,49 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getAllLawyers(): Promise<Lawyer[]> {
+  private async ensureReady(): Promise<void> {
     await this.ready;
+    if (this.initError) {
+      throw this.initError;
+    }
+  }
+
+  async getAllLawyers(): Promise<Lawyer[]> {
+    await this.ensureReady();
     return await this.db.select().from(schema.lawyers);
   }
 
   async getLawyerById(id: string): Promise<Lawyer | undefined> {
-    await this.ready;
+    await this.ensureReady();
     const result = await this.db.select().from(schema.lawyers).where(eq(schema.lawyers.id, id));
     return result[0];
   }
 
   async createLawyer(lawyer: InsertLawyer): Promise<Lawyer> {
-    if (this.ready) await this.ready;
+    await this.ensureReady();
     const result = await this.db.insert(schema.lawyers).values(lawyer).returning();
     return result[0];
   }
 
   async getAllIntakes(): Promise<Intake[]> {
-    await this.ready;
+    await this.ensureReady();
     return await this.db.select().from(schema.intakes);
   }
 
   async getIntakeById(id: string): Promise<Intake | undefined> {
-    await this.ready;
+    await this.ensureReady();
     const result = await this.db.select().from(schema.intakes).where(eq(schema.intakes.id, id));
     return result[0];
   }
 
   async createIntake(intake: InsertIntake): Promise<Intake> {
-    await this.ready;
+    await this.ensureReady();
     const result = await this.db.insert(schema.intakes).values(intake).returning();
     return result[0];
   }
 
   async updateIntake(id: string, updates: UpdateIntake): Promise<Intake | undefined> {
-    await this.ready;
+    await this.ensureReady();
     const result = await this.db
       .update(schema.intakes)
       .set({ ...updates, updatedAt: new Date() })
@@ -329,6 +340,50 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
+export class ResilientStorage implements IStorage {
+  constructor(
+    private primary: IStorage,
+    private fallback: IStorage,
+  ) {}
+
+  private async useFallback<T>(operation: string, action: (storage: IStorage) => Promise<T>): Promise<T> {
+    try {
+      return await action(this.primary);
+    } catch (error) {
+      console.error(`Primary storage failed during ${operation}; using fallback storage.`, error);
+      return await action(this.fallback);
+    }
+  }
+
+  async getAllLawyers(): Promise<Lawyer[]> {
+    return await this.useFallback("getAllLawyers", (storage) => storage.getAllLawyers());
+  }
+
+  async getLawyerById(id: string): Promise<Lawyer | undefined> {
+    return await this.useFallback("getLawyerById", (storage) => storage.getLawyerById(id));
+  }
+
+  async createLawyer(lawyer: InsertLawyer): Promise<Lawyer> {
+    return await this.useFallback("createLawyer", (storage) => storage.createLawyer(lawyer));
+  }
+
+  async getAllIntakes(): Promise<Intake[]> {
+    return await this.useFallback("getAllIntakes", (storage) => storage.getAllIntakes());
+  }
+
+  async getIntakeById(id: string): Promise<Intake | undefined> {
+    return await this.useFallback("getIntakeById", (storage) => storage.getIntakeById(id));
+  }
+
+  async createIntake(intake: InsertIntake): Promise<Intake> {
+    return await this.useFallback("createIntake", (storage) => storage.createIntake(intake));
+  }
+
+  async updateIntake(id: string, updates: UpdateIntake): Promise<Intake | undefined> {
+    return await this.useFallback("updateIntake", (storage) => storage.updateIntake(id, updates));
+  }
+}
+
 export const storage: IStorage = process.env.DATABASE_URL
-  ? new DatabaseStorage(process.env.DATABASE_URL)
+  ? new ResilientStorage(new DatabaseStorage(process.env.DATABASE_URL), new FileStorage())
   : new FileStorage();
