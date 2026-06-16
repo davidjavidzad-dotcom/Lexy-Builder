@@ -213,42 +213,113 @@ export class FileStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  private pool;
   private db;
+  private ready: Promise<void>;
 
   constructor(connectionString: string) {
-    const pool = new Pool({ connectionString });
-    this.db = drizzle(pool, { schema });
+    this.pool = new Pool({ connectionString });
+    this.db = drizzle(this.pool, { schema });
+    this.ready = this.initialize();
+  }
+
+  private async initialize(): Promise<void> {
+    await this.pool.query(`create extension if not exists "pgcrypto"`);
+    await this.pool.query(`
+      create table if not exists lawyers (
+        id varchar primary key default gen_random_uuid(),
+        name text not null,
+        firm text not null,
+        practice_areas text[] not null,
+        states text[] not null,
+        languages text[] not null,
+        hourly_rate integer not null,
+        image_url text not null,
+        rating integer not null,
+        description text not null
+      )
+    `);
+    await this.pool.query(`
+      create table if not exists intakes (
+        id varchar primary key default gen_random_uuid(),
+        workflow_id text not null,
+        workflow_title text not null,
+        data jsonb not null,
+        status text not null default 'new',
+        notes text not null default '',
+        assigned_lawyer_id text,
+        completed_at timestamp not null default now(),
+        updated_at timestamp not null default now()
+      )
+    `);
+    await this.pool.query(`alter table intakes add column if not exists status text not null default 'new'`);
+    await this.pool.query(`alter table intakes add column if not exists notes text not null default ''`);
+    await this.pool.query(`alter table intakes add column if not exists assigned_lawyer_id text`);
+    await this.pool.query(`alter table intakes add column if not exists updated_at timestamp not null default now()`);
+
+    const seeded = await this.pool.query(`select count(*)::int as count from lawyers`);
+    if ((seeded.rows[0]?.count || 0) === 0) {
+      for (const lawyer of starterLawyers) {
+        await this.pool.query(
+          `
+            insert into lawyers
+              (id, name, firm, practice_areas, states, languages, hourly_rate, image_url, rating, description)
+            values
+              ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          `,
+          [
+            lawyer.id,
+            lawyer.name,
+            lawyer.firm,
+            lawyer.practiceAreas,
+            lawyer.states,
+            lawyer.languages,
+            lawyer.hourlyRate,
+            lawyer.imageUrl,
+            lawyer.rating,
+            lawyer.description,
+          ],
+        );
+      }
+    }
   }
 
   async getAllLawyers(): Promise<Lawyer[]> {
+    await this.ready;
     return await this.db.select().from(schema.lawyers);
   }
 
   async getLawyerById(id: string): Promise<Lawyer | undefined> {
+    await this.ready;
     const result = await this.db.select().from(schema.lawyers).where(eq(schema.lawyers.id, id));
     return result[0];
   }
 
   async createLawyer(lawyer: InsertLawyer): Promise<Lawyer> {
+    if (this.ready) await this.ready;
     const result = await this.db.insert(schema.lawyers).values(lawyer).returning();
     return result[0];
   }
 
   async getAllIntakes(): Promise<Intake[]> {
+    await this.ready;
     return await this.db.select().from(schema.intakes);
   }
 
   async getIntakeById(id: string): Promise<Intake | undefined> {
+    await this.ready;
     const result = await this.db.select().from(schema.intakes).where(eq(schema.intakes.id, id));
     return result[0];
   }
 
   async createIntake(intake: InsertIntake): Promise<Intake> {
+    await this.ready;
     const result = await this.db.insert(schema.intakes).values(intake).returning();
     return result[0];
   }
 
   async updateIntake(id: string, updates: UpdateIntake): Promise<Intake | undefined> {
+    await this.ready;
     const result = await this.db
       .update(schema.intakes)
       .set({ ...updates, updatedAt: new Date() })
