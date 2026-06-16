@@ -1,7 +1,7 @@
 // React Component for Rendering Workflow Steps
 import React, { useState, useEffect } from 'react';
 import { WorkflowEngine } from './workflow-engine';
-import { WorkflowStep, Field, Option } from './workflow-types';
+import { WorkflowConfig, WorkflowStep, Field, Option } from './workflow-types';
 import workflowConfig from './workflows.json';
 
 interface WorkflowRendererProps {
@@ -13,7 +13,7 @@ export const WorkflowRenderer: React.FC<WorkflowRendererProps> = ({
   workflowId, 
   onComplete 
 }) => {
-  const [engine] = useState(() => new WorkflowEngine(workflowConfig));
+  const [engine] = useState(() => new WorkflowEngine(workflowConfig as WorkflowConfig));
   const [currentStep, setCurrentStep] = useState<WorkflowStep | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});

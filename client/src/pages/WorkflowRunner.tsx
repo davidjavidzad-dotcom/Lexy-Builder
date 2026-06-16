@@ -12,9 +12,9 @@ export function WorkflowRunner() {
   if (!workflow) {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh]">
-        <h1 className="text-2xl font-bold mb-4">Workflow Not Found</h1>
-        <Link href="/workflows">
-          <Button>Return to Library</Button>
+        <h1 className="text-2xl font-bold mb-4">Lexy Path Not Found</h1>
+        <Link href="/lexy">
+          <Button>Return to Lexy</Button>
         </Link>
       </div>
     );

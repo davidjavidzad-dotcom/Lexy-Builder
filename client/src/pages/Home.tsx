@@ -14,17 +14,16 @@ export function Home() {
             Production Ready Legal Ops
           </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 text-foreground animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-            Modern Legal Workflows <br/>
-            <span className="text-primary">Without The Friction.</span>
+            Legal help starts with Lexy. <br/>
+            <span className="text-primary">No friction, no guesswork.</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-            Automate entity formation, intake, and compliance with step-by-step workflows. 
-            Connect with top-tier legal experts instantly.
+            Lexy asks the right questions, organizes your facts, and helps GoodLegal find the best legal help for your situation.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
-            <Link href="/workflows">
+            <Link href="/lexy">
               <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white w-full sm:w-auto">
-                Start a Workflow <ArrowRight className="ml-2 h-5 w-5" />
+                Start with Lexy <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Link href="/directory">
@@ -43,18 +42,18 @@ export function Home() {
             <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 text-primary">
               <FileText className="h-6 w-6" />
             </div>
-            <h3 className="text-xl font-bold mb-3">Smart Workflows</h3>
+            <h3 className="text-xl font-bold mb-3">Lexy Intake</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Guided, step-by-step intakes that eliminate errors and ensure compliance from day one.
+              Guided, step-by-step form filling that captures the details lawyers need.
             </p>
           </div>
           <div className="p-8 rounded-2xl bg-secondary/30 border border-border/50 hover:border-primary/50 transition-colors">
             <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 text-primary">
               <Users className="h-6 w-6" />
             </div>
-            <h3 className="text-xl font-bold mb-3">Expert Directory</h3>
+            <h3 className="text-xl font-bold mb-3">Lawyer Matching</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Instantly match with pre-vetted legal professionals based on your specific intake data.
+              Lexy uses your intake to point you toward relevant legal professionals.
             </p>
           </div>
           <div className="p-8 rounded-2xl bg-secondary/30 border border-border/50 hover:border-primary/50 transition-colors">

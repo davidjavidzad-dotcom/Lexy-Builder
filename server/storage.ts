@@ -1,59 +1,263 @@
+import { randomUUID } from "crypto";
+import { mkdir, readFile, rename, writeFile } from "fs/promises";
+import { dirname, resolve } from "path";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import { eq, and, inArray, lte } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import * as schema from "@shared/schema";
-import type { Lawyer, InsertLawyer, Intake, InsertIntake } from "@shared/schema";
+import type { Lawyer, InsertLawyer, Intake, InsertIntake, UpdateIntake } from "@shared/schema";
 
 const { Pool } = pg;
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-export const db = drizzle(pool, { schema });
-
 export interface IStorage {
-  // Lawyers
   getAllLawyers(): Promise<Lawyer[]>;
   getLawyerById(id: string): Promise<Lawyer | undefined>;
   createLawyer(lawyer: InsertLawyer): Promise<Lawyer>;
-  
-  // Intakes
   getAllIntakes(): Promise<Intake[]>;
   getIntakeById(id: string): Promise<Intake | undefined>;
   createIntake(intake: InsertIntake): Promise<Intake>;
+  updateIntake(id: string, updates: UpdateIntake): Promise<Intake | undefined>;
 }
 
-export class DatabaseStorage implements IStorage {
-  // Lawyers
+const starterLawyers: Lawyer[] = [
+  {
+    id: "lawyer-sarah-jenkins",
+    name: "Sarah Jenkins",
+    firm: "Jenkins & Associates",
+    practiceAreas: ["Corporate", "Startups", "Entity Formation"],
+    states: ["CA", "NY"],
+    languages: ["English", "Spanish"],
+    hourlyRate: 350,
+    imageUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200",
+    rating: 49,
+    description: "Specializing in tech startups and efficient entity formation.",
+  },
+  {
+    id: "lawyer-david-chen",
+    name: "David Chen",
+    firm: "Chen Legal Group",
+    practiceAreas: ["Personal Injury", "Liability"],
+    states: ["CA", "TX"],
+    languages: ["English", "Mandarin"],
+    hourlyRate: 300,
+    imageUrl: "https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&q=80&w=200&h=200",
+    rating: 48,
+    description: "Tenacious representation for personal injury victims.",
+  },
+  {
+    id: "lawyer-elena-rodriguez",
+    name: "Elena Rodriguez",
+    firm: "Rodriguez Law",
+    practiceAreas: ["Family Law", "Estate Planning"],
+    states: ["FL", "NY"],
+    languages: ["English", "Spanish", "Portuguese"],
+    hourlyRate: 275,
+    imageUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200&h=200",
+    rating: 47,
+    description: "Compassionate counsel for family matters.",
+  },
+  {
+    id: "lawyer-michael-ross",
+    name: "Michael Ross",
+    firm: "Pearson Specter",
+    practiceAreas: ["Corporate", "Litigation"],
+    states: ["NY"],
+    languages: ["English"],
+    hourlyRate: 500,
+    imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200",
+    rating: 50,
+    description: "Top-tier corporate litigation and strategy.",
+  },
+  {
+    id: "lawyer-amanda-smith",
+    name: "Amanda Smith",
+    firm: "Smith & Partners",
+    practiceAreas: ["Personal Injury", "Medical Malpractice"],
+    states: ["CA", "WA"],
+    languages: ["English"],
+    hourlyRate: 325,
+    imageUrl: "https://images.unsplash.com/photo-1598550874175-4d7112ee751c?auto=format&fit=crop&q=80&w=200&h=200",
+    rating: 46,
+    description: "Dedicated to getting you the compensation you deserve.",
+  },
+];
+
+type SerializedIntake = Omit<Intake, "completedAt" | "updatedAt"> & {
+  completedAt: string;
+  updatedAt: string;
+};
+
+type StoredData = {
+  lawyers: Lawyer[];
+  intakes: SerializedIntake[];
+};
+
+function serializeIntake(intake: Intake): SerializedIntake {
+  return {
+    ...intake,
+    completedAt: intake.completedAt.toISOString(),
+    updatedAt: intake.updatedAt.toISOString(),
+  };
+}
+
+function deserializeIntake(intake: SerializedIntake): Intake {
+  return {
+    ...intake,
+    completedAt: new Date(intake.completedAt),
+    updatedAt: new Date(intake.updatedAt),
+  };
+}
+
+export class FileStorage implements IStorage {
+  private filePath = resolve(process.env.GOODLEGAL_DATA_FILE || ".local/goodlegal-data.json");
+  private lawyers = new Map<string, Lawyer>();
+  private intakes = new Map<string, Intake>();
+  private ready: Promise<void>;
+
+  constructor() {
+    this.ready = this.load();
+  }
+
+  private async load(): Promise<void> {
+    try {
+      const raw = await readFile(this.filePath, "utf-8");
+      const parsed = JSON.parse(raw) as StoredData;
+      this.lawyers = new Map((parsed.lawyers || starterLawyers).map((lawyer) => [lawyer.id, lawyer]));
+      this.intakes = new Map((parsed.intakes || []).map((intake) => {
+        const deserialized = deserializeIntake(intake);
+        return [deserialized.id, deserialized];
+      }));
+    } catch {
+      this.lawyers = new Map(starterLawyers.map((lawyer) => [lawyer.id, lawyer]));
+      this.intakes = new Map();
+      await this.persist();
+    }
+  }
+
+  private async persist(): Promise<void> {
+    const payload: StoredData = {
+      lawyers: Array.from(this.lawyers.values()),
+      intakes: Array.from(this.intakes.values()).map(serializeIntake),
+    };
+    await mkdir(dirname(this.filePath), { recursive: true });
+    const tempPath = `${this.filePath}.${process.pid}.tmp`;
+    await writeFile(tempPath, JSON.stringify(payload, null, 2));
+    await rename(tempPath, this.filePath);
+  }
+
   async getAllLawyers(): Promise<Lawyer[]> {
-    return await db.select().from(schema.lawyers);
+    await this.ready;
+    return Array.from(this.lawyers.values());
   }
 
   async getLawyerById(id: string): Promise<Lawyer | undefined> {
-    const result = await db.select().from(schema.lawyers).where(eq(schema.lawyers.id, id));
+    await this.ready;
+    return this.lawyers.get(id);
+  }
+
+  async createLawyer(lawyer: InsertLawyer): Promise<Lawyer> {
+    await this.ready;
+    const created: Lawyer = {
+      id: randomUUID(),
+      ...lawyer,
+    };
+    this.lawyers.set(created.id, created);
+    await this.persist();
+    return created;
+  }
+
+  async getAllIntakes(): Promise<Intake[]> {
+    await this.ready;
+    return Array.from(this.intakes.values()).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }
+
+  async getIntakeById(id: string): Promise<Intake | undefined> {
+    await this.ready;
+    return this.intakes.get(id);
+  }
+
+  async createIntake(intake: InsertIntake): Promise<Intake> {
+    await this.ready;
+    const now = new Date();
+    const created: Intake = {
+      id: randomUUID(),
+      completedAt: now,
+      updatedAt: now,
+      workflowId: intake.workflowId,
+      workflowTitle: intake.workflowTitle,
+      data: intake.data,
+      status: intake.status || "new",
+      notes: intake.notes || "",
+      assignedLawyerId: intake.assignedLawyerId || null,
+    };
+    this.intakes.set(created.id, created);
+    await this.persist();
+    return created;
+  }
+
+  async updateIntake(id: string, updates: UpdateIntake): Promise<Intake | undefined> {
+    await this.ready;
+    const existing = this.intakes.get(id);
+    if (!existing) return undefined;
+
+    const updated: Intake = {
+      ...existing,
+      ...updates,
+      assignedLawyerId: updates.assignedLawyerId === undefined ? existing.assignedLawyerId : updates.assignedLawyerId,
+      updatedAt: new Date(),
+    };
+    this.intakes.set(id, updated);
+    await this.persist();
+    return updated;
+  }
+}
+
+export class DatabaseStorage implements IStorage {
+  private db;
+
+  constructor(connectionString: string) {
+    const pool = new Pool({ connectionString });
+    this.db = drizzle(pool, { schema });
+  }
+
+  async getAllLawyers(): Promise<Lawyer[]> {
+    return await this.db.select().from(schema.lawyers);
+  }
+
+  async getLawyerById(id: string): Promise<Lawyer | undefined> {
+    const result = await this.db.select().from(schema.lawyers).where(eq(schema.lawyers.id, id));
     return result[0];
   }
 
   async createLawyer(lawyer: InsertLawyer): Promise<Lawyer> {
-    const result = await db.insert(schema.lawyers).values(lawyer).returning();
+    const result = await this.db.insert(schema.lawyers).values(lawyer).returning();
     return result[0];
   }
 
-  // Intakes
   async getAllIntakes(): Promise<Intake[]> {
-    return await db.select().from(schema.intakes);
+    return await this.db.select().from(schema.intakes);
   }
 
   async getIntakeById(id: string): Promise<Intake | undefined> {
-    const result = await db.select().from(schema.intakes).where(eq(schema.intakes.id, id));
+    const result = await this.db.select().from(schema.intakes).where(eq(schema.intakes.id, id));
     return result[0];
   }
 
   async createIntake(intake: InsertIntake): Promise<Intake> {
-    const result = await db.insert(schema.intakes).values(intake).returning();
+    const result = await this.db.insert(schema.intakes).values(intake).returning();
+    return result[0];
+  }
+
+  async updateIntake(id: string, updates: UpdateIntake): Promise<Intake | undefined> {
+    const result = await this.db
+      .update(schema.intakes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.intakes.id, id))
+      .returning();
     return result[0];
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage: IStorage = process.env.DATABASE_URL
+  ? new DatabaseStorage(process.env.DATABASE_URL)
+  : new FileStorage();

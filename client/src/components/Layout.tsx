@@ -16,14 +16,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <Link href="/workflows">
-              <a className={cn("hover:text-foreground transition-colors", location.startsWith("/workflows") && "text-foreground")}>
-                Workflows
+            <Link href="/lexy">
+              <a className={cn("hover:text-foreground transition-colors", (location.startsWith("/lexy") || location.startsWith("/workflows")) && "text-foreground")}>
+                Lexy
               </a>
             </Link>
             <Link href="/directory">
               <a className={cn("hover:text-foreground transition-colors", location.startsWith("/directory") && "text-foreground")}>
-                Directory
+                Find a Lawyer
               </a>
             </Link>
             <Link href="/admin">
@@ -37,9 +37,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <button className="text-sm font-medium text-muted-foreground hover:text-foreground">
               Sign In
             </button>
-            <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:brightness-110 transition-all">
-              Get Started
-            </button>
+            <Link href="/lexy">
+              <a className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:brightness-110 transition-all">
+                Ask Lexy
+              </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -55,13 +57,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="w-4 h-4 bg-primary rounded-sm"></div>
               GoodLegal
             </div>
-            <p>Modern legal workflows for the 21st century.</p>
+            <p>GoodLegal helps people use Lexy to get organized and find the right legal help.</p>
           </div>
           <div>
             <h4 className="font-bold text-foreground mb-4">Product</h4>
             <ul className="space-y-2">
-              <li>Workflows</li>
-              <li>Directory</li>
+              <li>Lexy</li>
+              <li>Find a Lawyer</li>
               <li>Pricing</li>
             </ul>
           </div>

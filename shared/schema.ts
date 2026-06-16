@@ -27,9 +27,19 @@ export const intakes = pgTable("intakes", {
   workflowId: text("workflow_id").notNull(),
   workflowTitle: text("workflow_title").notNull(),
   data: jsonb("data").notNull(), // Store all answers as JSON
+  status: text("status").notNull().default("new"),
+  notes: text("notes").notNull().default(""),
+  assignedLawyerId: text("assigned_lawyer_id"),
   completedAt: timestamp("completed_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const insertIntakeSchema = createInsertSchema(intakes).omit({ id: true, completedAt: true });
+export const insertIntakeSchema = createInsertSchema(intakes).omit({ id: true, completedAt: true, updatedAt: true });
+export const updateIntakeSchema = z.object({
+  status: z.enum(["new", "reviewing", "contacted", "matched", "closed"]).optional(),
+  notes: z.string().optional(),
+  assignedLawyerId: z.string().nullable().optional(),
+});
 export type InsertIntake = z.infer<typeof insertIntakeSchema>;
+export type UpdateIntake = z.infer<typeof updateIntakeSchema>;
 export type Intake = typeof intakes.$inferSelect;

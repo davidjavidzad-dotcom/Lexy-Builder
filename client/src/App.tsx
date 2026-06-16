@@ -4,9 +4,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { Layout } from "@/components/Layout";
 import { Home } from "@/pages/Home";
-import { Workflows } from "@/pages/Workflows";
 import { WorkflowRunner } from "@/pages/WorkflowRunner";
 import { Directory } from "@/pages/Directory";
+import { Admin } from "@/pages/Admin";
 import NotFound from "@/pages/not-found";
 import GoodlegalWorkflow from './components/GoodlegalWorkflow';
 
@@ -15,11 +15,11 @@ function Router() {
     <Layout>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/lexy" component={GoodlegalWorkflow} />
         <Route path="/workflows" component={GoodlegalWorkflow} />
         <Route path="/workflow/:workflowId" component={WorkflowRunner} />
         <Route path="/directory" component={Directory} />
-        {/* Admin route optional, can point to Directory for demo */}
-        <Route path="/admin" component={Directory} /> 
+        <Route path="/admin" component={Admin} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

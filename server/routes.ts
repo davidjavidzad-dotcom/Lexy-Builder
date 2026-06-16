@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { type Server } from "http";
 import { storage } from "./storage";
-import { insertLawyerSchema, insertIntakeSchema } from "@shared/schema";
+import { insertLawyerSchema, insertIntakeSchema, updateIntakeSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 
 export async function registerRoutes(
@@ -87,6 +87,23 @@ export async function registerRoutes(
       }
       console.error("Error creating intake:", error);
       res.status(500).json({ error: "Failed to create intake" });
+    }
+  });
+
+  app.patch("/api/intakes/:id", async (req, res) => {
+    try {
+      const validated = updateIntakeSchema.parse(req.body);
+      const intake = await storage.updateIntake(req.params.id, validated);
+      if (!intake) {
+        return res.status(404).json({ error: "Intake not found" });
+      }
+      res.json(intake);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: fromZodError(error).toString() });
+      }
+      console.error("Error updating intake:", error);
+      res.status(500).json({ error: "Failed to update intake" });
     }
   });
 

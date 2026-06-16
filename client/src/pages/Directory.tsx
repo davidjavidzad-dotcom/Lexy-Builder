@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Star, DollarSign, Languages, Search, Filter, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { mockLawyers } from "@/data/mockLawyers";
 
 interface Lawyer {
   id: string;
@@ -31,7 +32,6 @@ export function Directory() {
   const [selectedState, setSelectedState] = useState<string>("all");
   const [maxRate, setMaxRate] = useState<number>(1000);
 
-  // Fetch lawyers from API
   const { data: lawyers = [], isLoading, error } = useQuery<Lawyer[]>({
     queryKey: ["lawyers"],
     queryFn: async () => {
@@ -43,9 +43,10 @@ export function Directory() {
     }
   });
 
-  // Filter logic
+  const availableLawyers = error ? mockLawyers : lawyers;
+
   const filteredLawyers = useMemo(() => {
-    return lawyers.filter(lawyer => {
+    return availableLawyers.filter(lawyer => {
       const matchesSearch = lawyer.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             lawyer.firm.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             lawyer.practiceAreas.some(pa => pa.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -54,14 +55,14 @@ export function Directory() {
 
       return matchesSearch && matchesState && matchesRate;
     });
-  }, [lawyers, searchTerm, selectedState, maxRate]);
+  }, [availableLawyers, searchTerm, selectedState, maxRate]);
 
   return (
     <div className="container mx-auto px-4 py-8 h-[calc(100vh-64px)] flex flex-col">
       {sourceWorkflow && (
         <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md mb-8 flex items-center animate-in fade-in slide-in-from-top-4">
            <span className="text-sm font-medium">
-             Analysis Complete. We've filtered relevant legal experts based on your intake.
+             Lexy has organized your intake. GoodLegal can now help you compare relevant legal experts.
            </span>
         </div>
       )}
@@ -133,8 +134,8 @@ export function Directory() {
           )}
 
           {error && (
-            <div className="text-center py-12 text-destructive">
-              <p>Error loading lawyers. Please try again.</p>
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Live lawyer data is unavailable in this environment, so GoodLegal is showing sample attorneys.
             </div>
           )}
 
