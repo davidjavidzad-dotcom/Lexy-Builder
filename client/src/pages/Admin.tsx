@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Inbox, RefreshCw, Save, Users } from "lucide-react";
+import { BriefcaseBusiness, FileText, Inbox, Mail, Phone, RefreshCw, Save, Search, UserRound, Users } from "lucide-react";
 
 type IntakeStatus = "new" | "reviewing" | "contacted" | "matched" | "closed";
 
@@ -22,6 +23,14 @@ interface Intake {
 
 const LOCAL_SESSION_KEY = "lexy.workflow.session.v1";
 const statuses: IntakeStatus[] = ["new", "reviewing", "contacted", "matched", "closed"];
+const statusLabels: Record<IntakeStatus | "all", string> = {
+  all: "All",
+  new: "New",
+  reviewing: "Reviewing",
+  contacted: "Contacted",
+  matched: "Matched",
+  closed: "Closed",
+};
 
 function readLocalLexySession(): Intake[] {
   const saved = window.localStorage.getItem(LOCAL_SESSION_KEY);
@@ -59,12 +68,66 @@ function stringifyValue(value: unknown) {
   return String(value);
 }
 
+function findValue(data: Record<string, unknown>, names: string[]) {
+  const normalized = Object.entries(data || {}).map(([key, value]) => ({
+    key: key.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    value,
+  }));
+
+  for (const name of names) {
+    const match = normalized.find((entry) => entry.key.includes(name));
+    if (match?.value !== undefined && match.value !== null && String(match.value).trim() !== "") {
+      return stringifyValue(match.value);
+    }
+  }
+
+  return "";
+}
+
+function getContactDetails(intake: Intake) {
+  const data = intake.data || {};
+  const firstName = findValue(data, ["firstname", "clientfirstname"]);
+  const lastName = findValue(data, ["lastname", "clientlastname"]);
+  const combinedName = [firstName, lastName].filter(Boolean).join(" ").trim();
+
+  return {
+    name: combinedName || findValue(data, ["fullname", "clientname", "name"]) || "Unknown lead",
+    email: findValue(data, ["email", "mail"]),
+    phone: findValue(data, ["phone", "mobile", "tel"]),
+    location: findValue(data, ["state", "jurisdiction", "county", "city"]),
+    need: intake.workflowTitle || intake.workflowId,
+  };
+}
+
+function intakeMatches(intake: Intake, query: string, statusFilter: IntakeStatus | "all") {
+  const status = intake.status || "new";
+  if (statusFilter !== "all" && status !== statusFilter) return false;
+  if (!query.trim()) return true;
+
+  const contact = getContactDetails(intake);
+  const haystack = [
+    intake.id,
+    intake.workflowId,
+    intake.workflowTitle,
+    intake.notes,
+    status,
+    contact.name,
+    contact.email,
+    contact.phone,
+    contact.location,
+    ...Object.entries(intake.data || {}).flatMap(([key, value]) => [key, stringifyValue(value)]),
+  ].join(" ").toLowerCase();
+
+  return haystack.includes(query.toLowerCase());
+}
+
 function AdminIntakeCard({ intake, onSaved }: { intake: Intake; onSaved: () => void }) {
   const [status, setStatus] = useState<IntakeStatus>(intake.status || "new");
   const [notes, setNotes] = useState(intake.notes || "");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const canSave = intake.id !== "local-draft";
+  const contact = getContactDetails(intake);
 
   const save = async () => {
     if (!canSave) {
@@ -105,6 +168,37 @@ function AdminIntakeCard({ intake, onSaved }: { intake: Intake; onSaved: () => v
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
+        <div className="grid gap-3 rounded-md border bg-secondary/25 p-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="flex gap-3">
+            <UserRound className="mt-0.5 h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="text-xs font-semibold uppercase text-muted-foreground">Lead</div>
+              <div className="text-sm font-medium">{contact.name}</div>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Mail className="mt-0.5 h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="text-xs font-semibold uppercase text-muted-foreground">Email</div>
+              <div className="text-sm font-medium">{contact.email || "Not provided"}</div>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Phone className="mt-0.5 h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="text-xs font-semibold uppercase text-muted-foreground">Phone</div>
+              <div className="text-sm font-medium">{contact.phone || "Not provided"}</div>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <BriefcaseBusiness className="mt-0.5 h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="text-xs font-semibold uppercase text-muted-foreground">Need</div>
+              <div className="text-sm font-medium">{contact.need}</div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-end">
           <div className="space-y-2">
             <label className="text-sm font-medium">Status</label>
@@ -150,6 +244,8 @@ function AdminIntakeCard({ intake, onSaved }: { intake: Intake; onSaved: () => v
 
 export function Admin() {
   const localDrafts = useMemo(readLocalLexySession, []);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<IntakeStatus | "all">("all");
 
   const { data: serverIntakes = [], isLoading, error, refetch } = useQuery<Intake[]>({
     queryKey: ["/api/intakes"],
@@ -163,6 +259,7 @@ export function Admin() {
   });
 
   const intakes = serverIntakes.length > 0 ? serverIntakes : localDrafts;
+  const visibleIntakes = intakes.filter((intake) => intakeMatches(intake, query, statusFilter));
   const totalAnswers = intakes.reduce((count, intake) => count + Object.keys(intake.data || {}).length, 0);
   const openIntakes = intakes.filter((intake) => (intake.status || "new") !== "closed").length;
 
@@ -211,6 +308,27 @@ export function Admin() {
         </Card>
       </div>
 
+      <div className="mb-6 grid gap-3 rounded-md border bg-card p-4 md:grid-cols-[1fr_220px]">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search name, email, phone, legal issue, notes..."
+            className="pl-9"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value as IntakeStatus | "all")}
+          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+        >
+          {(["all", ...statuses] as Array<IntakeStatus | "all">).map((statusOption) => (
+            <option key={statusOption} value={statusOption}>{statusLabels[statusOption]}</option>
+          ))}
+        </select>
+      </div>
+
       {error && (
         <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           The server API is unavailable in this browser session, so Admin is showing saved local Lexy drafts when present.
@@ -228,7 +346,15 @@ export function Admin() {
           </Card>
         )}
 
-        {intakes.map((intake) => (
+        {!isLoading && intakes.length > 0 && visibleIntakes.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              No intakes match that search.
+            </CardContent>
+          </Card>
+        )}
+
+        {visibleIntakes.map((intake) => (
           <AdminIntakeCard key={intake.id} intake={intake} onSaved={refetch} />
         ))}
       </div>

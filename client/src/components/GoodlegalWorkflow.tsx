@@ -44,6 +44,8 @@ type SavedWorkflowState = {
   formData: Record<string, unknown>;
   history: HistoryEntry[];
   completedWorkflowIds: string[];
+  submittedIntakeId: string | null;
+  submitStatus: "idle" | "submitted" | "local";
   updatedAt: string;
 };
 
@@ -212,6 +214,8 @@ export const GoodlegalWorkflow = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState("Saved locally");
+  const [submittedIntakeId, setSubmittedIntakeId] = useState<string | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "submitted" | "local">("idle");
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -224,6 +228,8 @@ export const GoodlegalWorkflow = () => {
       setFormData(parsed.formData || {});
       setHistory(parsed.history || []);
       setCompletedWorkflowIds(parsed.completedWorkflowIds || []);
+      setSubmittedIntakeId(parsed.submittedIntakeId || null);
+      setSubmitStatus(parsed.submitStatus || "idle");
       setSaveStatus(parsed.updatedAt ? `Restored ${new Date(parsed.updatedAt).toLocaleString()}` : "Restored");
     } catch {
       localStorage.removeItem(STORAGE_KEY);
@@ -239,6 +245,8 @@ export const GoodlegalWorkflow = () => {
         formData,
         history,
         completedWorkflowIds,
+        submittedIntakeId,
+        submitStatus,
         updatedAt: new Date().toISOString(),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -246,7 +254,7 @@ export const GoodlegalWorkflow = () => {
     }, AUTOSAVE_DELAY);
 
     return () => window.clearTimeout(timeout);
-  }, [selectedWorkflowId, currentStepId, formData, history, completedWorkflowIds]);
+  }, [selectedWorkflowId, currentStepId, formData, history, completedWorkflowIds, submittedIntakeId, submitStatus]);
 
   const workflow = selectedWorkflowId ? getWorkflowById(selectedWorkflowId) : null;
   const currentStep = workflow?.steps && currentStepId ? workflow.steps[currentStepId] : null;
@@ -260,6 +268,8 @@ export const GoodlegalWorkflow = () => {
     setFormData({});
     setHistory([]);
     setSelectedWorkflowId(workflowId);
+    setSubmittedIntakeId(null);
+    setSubmitStatus("idle");
 
     if (!nextWorkflow) {
       setCurrentStepId(null);
@@ -281,6 +291,8 @@ export const GoodlegalWorkflow = () => {
     setFormData({});
     setHistory([]);
     setErrors({});
+    setSubmittedIntakeId(null);
+    setSubmitStatus("idle");
     setSaveStatus("Cleared");
   };
 
@@ -335,7 +347,7 @@ export const GoodlegalWorkflow = () => {
     setIsSubmitting(true);
 
     try {
-      await fetch("/api/intakes", {
+      const response = await fetch("/api/intakes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -344,7 +356,13 @@ export const GoodlegalWorkflow = () => {
           data: payload.data,
         }),
       });
+      if (!response.ok) throw new Error("Intake submission failed");
+      const intake = await response.json() as { id?: string };
+      setSubmittedIntakeId(intake.id || null);
+      setSubmitStatus("submitted");
     } catch {
+      setSubmittedIntakeId(null);
+      setSubmitStatus("local");
       // Local persistence still protects the user's answers when the backend is unavailable.
     } finally {
       setIsSubmitting(false);
@@ -792,13 +810,23 @@ export const GoodlegalWorkflow = () => {
       <div className="container mx-auto max-w-3xl px-4 py-14">
         <div className="rounded-md border bg-card p-8 text-center">
           <CheckCircle2 className="mx-auto mb-5 h-12 w-12 text-primary" />
-          <h1 className="text-3xl font-bold">Lexy Complete</h1>
-          <p className="mt-3 text-muted-foreground">Your answers are saved locally and ready to export or match with counsel.</p>
+          <h1 className="text-3xl font-bold">{submitStatus === "submitted" ? "Submitted to GoodLegal" : "Lexy Complete"}</h1>
+          <p className="mt-3 text-muted-foreground">
+            {submitStatus === "submitted"
+              ? "Lexy organized your answers into an intake GoodLegal can review and match with the right legal help."
+              : "Your answers are saved in this browser. You can export them now, and GoodLegal will submit them once the server is reachable."}
+          </p>
+          {submittedIntakeId && (
+            <div className="mx-auto mt-5 max-w-md rounded-md border bg-secondary/35 px-4 py-3 text-sm">
+              Intake ID: <span className="font-semibold">{submittedIntakeId}</span>
+            </div>
+          )}
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button onClick={exportJson} variant="outline"><Download className="mr-2 h-4 w-4" /> JSON</Button>
             <Button onClick={exportDoc} variant="outline"><FileText className="mr-2 h-4 w-4" /> DOC</Button>
             <Button onClick={() => window.print()} variant="outline"><Printer className="mr-2 h-4 w-4" /> PDF</Button>
-            <Button onClick={() => setLocation(`/directory?source=${selectedWorkflowId}`)}>Find Lawyers</Button>
+            <Button onClick={() => setLocation(`/directory?source=${selectedWorkflowId}${submittedIntakeId ? `&intake=${submittedIntakeId}` : ""}`)}>Find Lawyers</Button>
+            <Button variant="outline" onClick={() => setLocation("/admin")}>Review in Admin</Button>
           </div>
           <Button variant="ghost" onClick={resetSession} className="mt-6"><RotateCcw className="mr-2 h-4 w-4" /> Start over</Button>
         </div>

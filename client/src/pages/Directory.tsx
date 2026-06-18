@@ -6,8 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, DollarSign, Languages, Search, Filter, Loader2 } from "lucide-react";
-import { useLocation } from "wouter";
+import { MapPin, Star, DollarSign, Languages, Search, Filter, Loader2, CheckCircle2 } from "lucide-react";
 import { mockLawyers } from "@/data/mockLawyers";
 
 interface Lawyer {
@@ -23,14 +22,30 @@ interface Lawyer {
   description: string;
 }
 
+const LOCAL_SESSION_KEY = "lexy.workflow.session.v1";
+
+function getSavedIntakeId() {
+  try {
+    const saved = window.localStorage.getItem(LOCAL_SESSION_KEY);
+    if (!saved) return "";
+    const parsed = JSON.parse(saved) as { submittedIntakeId?: string };
+    return parsed.submittedIntakeId || "";
+  } catch {
+    return "";
+  }
+}
+
 export function Directory() {
-  const [location] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   const sourceWorkflow = searchParams.get('source');
+  const intakeId = searchParams.get("intake") || getSavedIntakeId();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedState, setSelectedState] = useState<string>("all");
   const [maxRate, setMaxRate] = useState<number>(1000);
+  const [expandedLawyerId, setExpandedLawyerId] = useState<string | null>(null);
+  const [consultMessage, setConsultMessage] = useState("");
+  const [requestingLawyerId, setRequestingLawyerId] = useState<string | null>(null);
 
   const { data: lawyers = [], isLoading, error } = useQuery<Lawyer[]>({
     queryKey: ["lawyers"],
@@ -57,6 +72,31 @@ export function Directory() {
     });
   }, [availableLawyers, searchTerm, selectedState, maxRate]);
 
+  const requestConsult = async (lawyer: Lawyer) => {
+    setRequestingLawyerId(lawyer.id);
+    setConsultMessage("");
+
+    try {
+      if (intakeId) {
+        const response = await fetch(`/api/intakes/${intakeId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "matched",
+            assignedLawyerId: lawyer.id,
+            notes: `Requested consult with ${lawyer.name} at ${lawyer.firm}.`,
+          }),
+        });
+        if (!response.ok) throw new Error("Could not update intake");
+      }
+      setConsultMessage(`Consult request saved for ${lawyer.name}. GoodLegal can follow up from Admin.`);
+    } catch {
+      setConsultMessage(`Consult request noted for ${lawyer.name}. Your Lexy answers are still saved locally.`);
+    } finally {
+      setRequestingLawyerId(null);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 h-[calc(100vh-64px)] flex flex-col">
       {sourceWorkflow && (
@@ -64,6 +104,13 @@ export function Directory() {
            <span className="text-sm font-medium">
              Lexy has organized your intake. GoodLegal can now help you compare relevant legal experts.
            </span>
+        </div>
+      )}
+
+      {consultMessage && (
+        <div className="mb-6 flex items-center gap-3 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+          <CheckCircle2 className="h-4 w-4" />
+          {consultMessage}
         </div>
       )}
 
@@ -161,6 +208,14 @@ export function Directory() {
                     </div>
                     
                     <p className="text-sm text-muted-foreground line-clamp-2">{lawyer.description}</p>
+                    {expandedLawyerId === lawyer.id && (
+                      <div className="rounded-md border bg-secondary/30 p-4 text-sm leading-6 text-muted-foreground">
+                        <p>{lawyer.description}</p>
+                        <p className="mt-2">
+                          Best fit: {lawyer.practiceAreas.join(", ")} in {lawyer.states.join(", ")}.
+                        </p>
+                      </div>
+                    )}
                     
                     <div className="flex flex-wrap gap-2 mt-3">
                       {lawyer.practiceAreas.map(area => (
@@ -183,8 +238,15 @@ export function Directory() {
                 </div>
                 
                 <div className="flex gap-3 mt-6 justify-end">
-                   <Button variant="outline">View Profile</Button>
-                   <Button>Request Consult</Button>
+                   <Button
+                     variant="outline"
+                     onClick={() => setExpandedLawyerId(expandedLawyerId === lawyer.id ? null : lawyer.id)}
+                   >
+                     {expandedLawyerId === lawyer.id ? "Hide Profile" : "View Profile"}
+                   </Button>
+                   <Button onClick={() => requestConsult(lawyer)} disabled={requestingLawyerId === lawyer.id}>
+                     {requestingLawyerId === lawyer.id ? "Saving..." : "Request Consult"}
+                   </Button>
                 </div>
               </CardContent>
             </Card>

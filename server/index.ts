@@ -90,7 +90,6 @@ app.use((req, res, next) => {
     {
       port,
       host,
-      reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

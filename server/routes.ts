@@ -8,6 +8,26 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  app.get("/api/health", async (_req, res) => {
+    try {
+      const [lawyers, intakes] = await Promise.all([
+        storage.getAllLawyers(),
+        storage.getAllIntakes(),
+      ]);
+      res.json({
+        ok: true,
+        databaseConfigured: Boolean(process.env.DATABASE_URL),
+        lawyers: lawyers.length,
+        intakes: intakes.length,
+      });
+    } catch (error) {
+      console.error("Health check failed:", error);
+      res.status(500).json({
+        ok: false,
+        databaseConfigured: Boolean(process.env.DATABASE_URL),
+      });
+    }
+  });
   
   // Lawyers API
   app.get("/api/lawyers", async (req, res) => {
