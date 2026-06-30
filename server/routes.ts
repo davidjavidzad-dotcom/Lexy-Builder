@@ -3,6 +3,7 @@ import { type Server } from "http";
 import { storage } from "./storage";
 import { insertLawyerSchema, insertIntakeSchema, updateIntakeSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import { requireAdmin } from "./auth";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -58,7 +59,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/lawyers", async (req, res) => {
+  app.post("/api/lawyers", requireAdmin, async (req, res) => {
     try {
       const validated = insertLawyerSchema.parse(req.body);
       const lawyer = await storage.createLawyer(validated);
@@ -73,7 +74,7 @@ export async function registerRoutes(
   });
 
   // Intakes API
-  app.get("/api/intakes", async (req, res) => {
+  app.get("/api/intakes", requireAdmin, async (req, res) => {
     try {
       const intakes = await storage.getAllIntakes();
       res.json(intakes);
@@ -83,7 +84,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/intakes/:id", async (req, res) => {
+  app.get("/api/intakes/:id", requireAdmin, async (req, res) => {
     try {
       const intake = await storage.getIntakeById(req.params.id);
       if (!intake) {
@@ -110,7 +111,34 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/intakes/:id", async (req, res) => {
+  app.post("/api/intakes/:id/consult-request", async (req, res) => {
+    try {
+      const lawyerId = typeof req.body?.lawyerId === "string" ? req.body.lawyerId : "";
+      if (!lawyerId) {
+        return res.status(400).json({ error: "lawyerId is required" });
+      }
+
+      const lawyer = await storage.getLawyerById(lawyerId);
+      const intake = await storage.getIntakeById(req.params.id);
+
+      if (!lawyer || !intake) {
+        return res.status(404).json({ error: "Intake or lawyer not found" });
+      }
+
+      const updated = await storage.updateIntake(req.params.id, {
+        status: "matched",
+        assignedLawyerId: lawyer.id,
+        notes: `Requested consult with ${lawyer.name} at ${lawyer.firm}.`,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error requesting consult:", error);
+      res.status(500).json({ error: "Failed to request consult" });
+    }
+  });
+
+  app.patch("/api/intakes/:id", requireAdmin, async (req, res) => {
     try {
       const validated = updateIntakeSchema.parse(req.body);
       const intake = await storage.updateIntake(req.params.id, validated);

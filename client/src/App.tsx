@@ -7,6 +7,8 @@ import { Home } from "@/pages/Home";
 import { WorkflowRunner } from "@/pages/WorkflowRunner";
 import { Directory } from "@/pages/Directory";
 import { Admin } from "@/pages/Admin";
+import { Privacy } from "@/pages/Privacy";
+import { Terms } from "@/pages/Terms";
 import NotFound from "@/pages/not-found";
 import GoodlegalWorkflow from './components/GoodlegalWorkflow';
 
@@ -20,6 +22,8 @@ function Router() {
         <Route path="/workflow/:workflowId" component={WorkflowRunner} />
         <Route path="/directory" component={Directory} />
         <Route path="/admin" component={Admin} />
+        <Route path="/privacy" component={Privacy} />
+        <Route path="/terms" component={Terms} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

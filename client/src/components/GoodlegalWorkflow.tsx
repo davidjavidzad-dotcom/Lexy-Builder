@@ -51,6 +51,7 @@ type SavedWorkflowState = {
 
 const STORAGE_KEY = "lexy.workflow.session.v1";
 const AUTOSAVE_DELAY = 350;
+const CONSENT_FIELD_ID = "goodlegal_submission_consent";
 
 const stateOptions = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS",
@@ -313,6 +314,11 @@ export const GoodlegalWorkflow = () => {
       if (isBlank(formData[currentStepId || ""])) {
         nextErrors[currentStepId || "selection"] = "Please select an option.";
       }
+      return nextErrors;
+    }
+
+    if (currentStep.type === "summary" && formData[CONSENT_FIELD_ID] !== true) {
+      nextErrors[CONSENT_FIELD_ID] = "Please confirm before submitting.";
       return nextErrors;
     }
 
@@ -702,7 +708,7 @@ export const GoodlegalWorkflow = () => {
   };
 
   const renderUtilityStep = (step: WorkflowStep) => {
-    const dataEntries = Object.entries(formData);
+    const dataEntries = Object.entries(formData).filter(([key]) => key !== CONSENT_FIELD_ID);
 
     if (step.type === "summary" || step.type === "confirmation") {
       return (
@@ -725,6 +731,20 @@ export const GoodlegalWorkflow = () => {
             <Button type="button" variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> PDF</Button>
             <Button type="button" variant="outline" onClick={sendEmail}><Mail className="mr-2 h-4 w-4" /> Email</Button>
           </div>
+          {step.type === "summary" && (
+            <label className={cn("flex items-start gap-3 rounded-md border p-4", errors[CONSENT_FIELD_ID] && "border-destructive bg-destructive/5")}>
+              <input
+                type="checkbox"
+                checked={formData[CONSENT_FIELD_ID] === true}
+                onChange={(event) => updateValue(CONSENT_FIELD_ID, event.target.checked)}
+                className="mt-1 h-4 w-4 accent-primary"
+              />
+              <span className="text-sm leading-6 text-muted-foreground">
+                I understand Lexy is not a lawyer, GoodLegal is not providing legal advice through this intake, and submitting this form allows GoodLegal to review my answers and contact me or match me with legal help.
+                {errors[CONSENT_FIELD_ID] && <span className="mt-1 block text-destructive">{errors[CONSENT_FIELD_ID]}</span>}
+              </span>
+            </label>
+          )}
         </div>
       );
     }
@@ -826,7 +846,6 @@ export const GoodlegalWorkflow = () => {
             <Button onClick={exportDoc} variant="outline"><FileText className="mr-2 h-4 w-4" /> DOC</Button>
             <Button onClick={() => window.print()} variant="outline"><Printer className="mr-2 h-4 w-4" /> PDF</Button>
             <Button onClick={() => setLocation(`/directory?source=${selectedWorkflowId}${submittedIntakeId ? `&intake=${submittedIntakeId}` : ""}`)}>Find Lawyers</Button>
-            <Button variant="outline" onClick={() => setLocation("/admin")}>Review in Admin</Button>
           </div>
           <Button variant="ghost" onClick={resetSession} className="mt-6"><RotateCcw className="mr-2 h-4 w-4" /> Start over</Button>
         </div>

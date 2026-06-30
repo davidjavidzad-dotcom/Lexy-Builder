@@ -78,14 +78,10 @@ export function Directory() {
 
     try {
       if (intakeId) {
-        const response = await fetch(`/api/intakes/${intakeId}`, {
-          method: "PATCH",
+        const response = await fetch(`/api/intakes/${intakeId}/consult-request`, {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            status: "matched",
-            assignedLawyerId: lawyer.id,
-            notes: `Requested consult with ${lawyer.name} at ${lawyer.firm}.`,
-          }),
+          body: JSON.stringify({ lawyerId: lawyer.id }),
         });
         if (!response.ok) throw new Error("Could not update intake");
       }

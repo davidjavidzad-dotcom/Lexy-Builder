@@ -26,17 +26,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 Find a Lawyer
               </a>
             </Link>
-            <Link href="/admin">
-              <a className={cn("hover:text-foreground transition-colors", location === "/admin" && "text-foreground")}>
-                Admin
-              </a>
-            </Link>
           </nav>
 
           <div className="flex items-center gap-4">
-            <button className="text-sm font-medium text-muted-foreground hover:text-foreground">
-              Sign In
-            </button>
             <Link href="/lexy">
               <a className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:brightness-110 transition-all">
                 Ask Lexy
@@ -78,8 +70,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div>
             <h4 className="font-bold text-foreground mb-4">Legal</h4>
             <ul className="space-y-2">
-              <li>Privacy</li>
-              <li>Terms</li>
+              <li><Link href="/privacy"><a className="hover:text-foreground">Privacy</a></Link></li>
+              <li><Link href="/terms"><a className="hover:text-foreground">Terms</a></Link></li>
             </ul>
           </div>
         </div>
