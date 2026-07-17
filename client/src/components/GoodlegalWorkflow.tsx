@@ -53,6 +53,32 @@ const STORAGE_KEY = "lexy.workflow.session.v1";
 const AUTOSAVE_DELAY = 350;
 const CONSENT_FIELD_ID = "goodlegal_submission_consent";
 
+const defaultVehicleColors: Option[] = [
+  { label: "White", value: "white" },
+  { label: "Black", value: "black" },
+  { label: "Gray", value: "gray" },
+  { label: "Silver", value: "silver" },
+  { label: "Blue", value: "blue" },
+  { label: "Red", value: "red" },
+  { label: "Green", value: "green" },
+  { label: "Brown", value: "brown" },
+  { label: "Gold", value: "gold" },
+  { label: "Other", value: "other" },
+];
+
+const colorSwatchHex: Record<string, string> = {
+  white: "#ffffff",
+  black: "#111111",
+  gray: "#6b7280",
+  silver: "#cbd5e1",
+  blue: "#2563eb",
+  red: "#dc2626",
+  green: "#16a34a",
+  brown: "#8b5e34",
+  gold: "#d4a017",
+  other: "linear-gradient(135deg, #ef4444, #f59e0b, #22c55e, #3b82f6)",
+};
+
 const stateOptions = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS",
   "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM",
@@ -582,7 +608,6 @@ export const GoodlegalWorkflow = () => {
         );
 
       case "multi_select":
-      case "color_swatch":
         return fieldShell(
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {options.map((option) => {
@@ -604,6 +629,48 @@ export const GoodlegalWorkflow = () => {
             })}
           </div>,
         );
+
+      case "color_swatch": {
+        const colorOptions = options.length > 0 ? options : defaultVehicleColors;
+        const selectedValue = String(value || "");
+
+        return fieldShell(
+          <div className="mt-2 space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {colorOptions.map((option) => {
+                const isOther = option.value === "other";
+                const selected = selectedValue === option.value || (isOther && selectedValue.startsWith("other:"));
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => updateValue(field.id, isOther ? "other:" : option.value)}
+                    className={cn(
+                      "flex h-12 items-center gap-3 rounded-md border px-3 text-left text-sm font-medium transition-colors",
+                      selected ? "border-primary bg-accent text-accent-foreground" : "border-input hover:bg-secondary",
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="h-6 w-6 shrink-0 rounded-full border border-border shadow-sm"
+                      style={{ background: colorSwatchHex[option.value.toLowerCase()] || option.value }}
+                    />
+                    <span>{option.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {selectedValue.startsWith("other:") && (
+              <Input
+                value={selectedValue.replace(/^other:/, "")}
+                onChange={(event) => updateValue(field.id, `other:${event.target.value}`)}
+                placeholder="Describe the vehicle color"
+                className={baseInputClass}
+              />
+            )}
+          </div>,
+        );
+      }
 
       case "file_upload":
       case "file_or_text":
