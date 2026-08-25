@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertLawyerSchema, insertIntakeSchema, updateIntakeSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { requireAdmin } from "./auth";
+import { notifyConsultRequested, notifyIntakeSubmitted } from "./notifications";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -18,6 +19,7 @@ export async function registerRoutes(
       res.json({
         ok: true,
         databaseConfigured: Boolean(process.env.DATABASE_URL),
+        emailConfigured: Boolean(process.env.RESEND_API_KEY && process.env.INTAKE_ALERT_TO),
         lawyers: lawyers.length,
         intakes: intakes.length,
       });
@@ -101,6 +103,9 @@ export async function registerRoutes(
     try {
       const validated = insertIntakeSchema.parse(req.body);
       const intake = await storage.createIntake(validated);
+      notifyIntakeSubmitted(intake).catch((error) => {
+        console.error("Error sending intake notification:", error);
+      });
       res.status(201).json(intake);
     } catch (error: any) {
       if (error.name === "ZodError") {
@@ -130,6 +135,12 @@ export async function registerRoutes(
         assignedLawyerId: lawyer.id,
         notes: `Requested consult with ${lawyer.name} at ${lawyer.firm}.`,
       });
+
+      if (updated) {
+        notifyConsultRequested(updated, lawyer).catch((error) => {
+          console.error("Error sending consult notification:", error);
+        });
+      }
 
       res.json(updated);
     } catch (error) {

@@ -31,12 +31,22 @@ DATABASE_URL=postgres://...
 NODE_ENV=production
 PORT=5000
 HOST=0.0.0.0
+ADMIN_PASSWORD=...
 ```
 
 Optional local fallback:
 
 ```bash
 GOODLEGAL_DATA_FILE=.local/goodlegal-data.json
+```
+
+Optional intake email alerts:
+
+```bash
+RESEND_API_KEY=re_...
+INTAKE_ALERT_TO=david@example.com
+INTAKE_ALERT_FROM=GoodLegal <intake@goodlegal.tech>
+PUBLIC_APP_URL=https://goodlegal.tech
 ```
 
 ## MVP Priority
@@ -47,3 +57,13 @@ GOODLEGAL_DATA_FILE=.local/goodlegal-data.json
 4. Connect lawyer matching.
 5. Add login.
 6. Add payments.
+
+## Backend Systems Still Needed
+
+1. Email alerts for every new Lexy submission.
+2. Real lawyer profile ingestion and approval.
+3. Real user authentication for consumers and lawyers.
+4. File upload storage for documents and photos.
+5. Analytics for funnel tracking.
+6. Error monitoring.
+7. Payments and referral tracking.
