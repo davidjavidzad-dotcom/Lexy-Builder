@@ -183,6 +183,13 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
+function parseListInput(value: string): string[] {
+  return value
+    .split(/\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function createExportPayload(workflowId: string, workflow: WorkflowNode, data: Record<string, unknown>) {
   return {
     workflowId,
@@ -608,6 +615,20 @@ export const GoodlegalWorkflow = () => {
         );
 
       case "multi_select":
+        if (options.length === 0) {
+          const textValue = Array.isArray(value) ? value.join("\n") : String(value || "");
+          return fieldShell(
+            <Textarea
+              id={field.id}
+              value={textValue}
+              onChange={(event) => updateValue(field.id, parseListInput(event.target.value))}
+              placeholder={field.source ? `Enter ${field.label.toLowerCase()}, one per line` : "Enter each item on its own line"}
+              rows={4}
+              className={cn("mt-2 min-h-28 text-base", error && "border-destructive focus-visible:ring-destructive")}
+            />,
+          );
+        }
+
         return fieldShell(
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {options.map((option) => {
